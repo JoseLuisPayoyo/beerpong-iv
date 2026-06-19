@@ -73,4 +73,11 @@ Team name, player 1, player 2, contact phone, optional email, paid (bool, set by
 
 ## Status
 
-Foundation scaffolded and verified. Next.js 16 (App Router, `src/`, TypeScript, ESLint) + Tailwind CSS v4 + shadcn/ui (Neutral base color) are installed. `button` and `card` components are in `src/components/ui`; the home page is a minimal "Beerpong IV" placeholder with a Button. Production build and dev server both run clean. Next step: wire up Supabase (client + service-role server access) and the data model.
+Foundation scaffolded and verified. Next.js 16 (App Router, `src/`, TypeScript, ESLint) + Tailwind CSS v4 + shadcn/ui (Neutral base color) are installed. `button` and `card` components are in `src/components/ui`; the home page is a minimal "Beerpong IV" placeholder with a Button.
+
+Supabase is wired (`@supabase/ssr` + `@supabase/supabase-js`) using the new API keys (publishable + secret). Client helpers live in `src/lib/supabase/`:
+- `client.ts` — browser client (publishable key) for Client Components and Realtime.
+- `server.ts` — server client (publishable key + Next.js cookies) for Server Components and route handlers acting as the logged-in admin; RLS applies.
+- `admin.ts` — privileged, server-only client (secret key, no session persistence) for writes in API routes. Guarded with `import "server-only"`; never import it from client code.
+
+Auth session refresh runs in `src/proxy.ts` (Next 16 renamed the `middleware` convention to `proxy`), delegating to `updateSession` in `src/lib/supabase/middleware.ts`. Env var names are documented in `.env.example`; real values live in the gitignored `.env.local`. No tables or queries exist yet. Next step: define the data model (schema + RLS) and start reading/writing.
