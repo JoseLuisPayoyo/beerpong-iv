@@ -9,15 +9,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - image files
-     * Feel free to modify this pattern to include more paths.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  // Only run the auth-session refresh where a session can exist: the
+  // operational app (/torneo, incl. admin) and the write API routes (/api).
+  // The public landing ("/") is intentionally excluded so it stays static and
+  // cacheable — no per-request getUser() round-trip on the highest-traffic page.
+  matcher: ["/torneo/:path*", "/api/:path*"],
 };
