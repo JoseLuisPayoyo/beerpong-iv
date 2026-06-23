@@ -1,0 +1,380 @@
+/* ============================================================================
+   Landing-only stylesheet — "Verbena reinventada × arcade"
+   ----------------------------------------------------------------------------
+   ISOLATION CONTRACT (read before editing):
+   - This file is imported ONLY by (landing)/layout.tsx.
+   - Next App Router does NOT unload a layout's CSS on client-side navigation,
+     so this sheet can remain in the DOM after navigating  / -> /torneo.
+   - Therefore EVERY rule here is scoped under `.landing-root`. That wrapper
+     div exists ONLY on landing pages, so none of these rules (and none of the
+     display-font CSS variables, which are set on the same wrapper) can ever
+     match or restyle anything under /torneo.
+   - Nothing here touches the shared tokens in globals.css / :root. The
+     operational side keeps its sober Neutral look untouched.
+   - Plain CSS only: no @theme / @apply / @tailwind. Global Tailwind utilities
+     (flex, grid, p-4, ...) still work in landing components because they ship
+     from globals.css; here we only add what Tailwind can't express cleanly
+     (the festival palette, display type scale, radial section backdrops).
+   ========================================================================== */
+
+.landing-root {
+  /* --- Palette (festival, applied ONLY here) ------------------------------ */
+  --lp-night: #1a1110; /* warm ink-brown base — NOT pure black */
+  --lp-night-2: #241715; /* a hair lifted, for recessed surfaces */
+  --lp-orange: #ff6b1e; /* the king: CTA, ball, key headlines */
+  --lp-magenta: #d4537e; /* the accomplice: rules the "night" half */
+  --lp-cream: #fff6ec; /* paper — large type */
+  --lp-lime: #97c459; /* state ONLY: plazas libres / dentro */
+  --lp-amber: #ef9f27; /* state ONLY: pocas plazas */
+
+  /* derived tints */
+  --lp-cream-dim: rgba(255, 246, 236, 0.62);
+  /* 0.42 keeps a clearly-dimmed look while lifting meaningful faint text
+     (e.g. the "/ 48" total, form placeholders) clear of WCAG contrast floors. */
+  --lp-cream-faint: rgba(255, 246, 236, 0.42);
+  --lp-card-bg: rgba(255, 255, 255, 0.04);
+  --lp-card-border: rgba(255, 246, 236, 0.1);
+  --lp-card-border-strong: rgba(255, 246, 236, 0.16);
+
+  /* --- Fonts -------------------------------------------------------------- */
+  /* The --font-* vars are injected onto this same element by next/font in the
+     landing layout. Fallbacks keep layout sane before the webfont swaps in. */
+  --lp-font-display: var(--font-anton), "Arial Narrow", "Haettenschweiler",
+    Impact, sans-serif;
+  --lp-font-mono: var(--font-space-mono), ui-monospace, "Cascadia Code",
+    "SFMono-Regular", monospace;
+  --lp-font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  background-color: var(--lp-night);
+  color: var(--lp-cream);
+  font-family: var(--lp-font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Full-viewport warm backdrop pinned behind everything, so iOS rubber-band
+   overscroll never flashes the white shared <body>. Rendered inside the
+   wrapper, but scoped anyway for belt-and-braces isolation. */
+.landing-root .lp-bg-base {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--lp-night);
+  pointer-events: none;
+}
+
+/* ----------------------------------------------------------------------------
+   Typography helpers
+   -------------------------------------------------------------------------- */
+.landing-root .lp-display {
+  font-family: var(--lp-font-display);
+  font-weight: 400; /* Anton ships a single weight */
+  line-height: 0.82;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.landing-root .lp-mono {
+  font-family: var(--lp-font-mono);
+  font-weight: 400;
+}
+
+.landing-root .lp-body {
+  font-family: var(--lp-font-body);
+}
+
+/* Display type scale — fluid, mobile-first. clamp(min, vw, max). */
+.landing-root .lp-display-hero {
+  font-size: clamp(4.25rem, 21vw, 13rem);
+}
+.landing-root .lp-display-xl {
+  font-size: clamp(2.75rem, 12vw, 6.5rem);
+}
+.landing-root .lp-display-lg {
+  font-size: clamp(2.5rem, 10vw, 5.5rem);
+}
+.landing-root .lp-display-md {
+  font-size: clamp(2rem, 8vw, 4rem);
+}
+
+/* Mono "kicker" / data label — small, uppercase, tracked out, LED feel. */
+.landing-root .lp-label {
+  font-family: var(--lp-font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--lp-cream-dim);
+}
+
+/* ----------------------------------------------------------------------------
+   Section shells + the orange -> magenta scroll journey
+   Each section is min 100svh; the page "warms" as you descend: orange glows up
+   top (1–3), shifting through amber, to magenta down low (4–6). All radials are
+   low-opacity glows layered over the dark base from .landing-root.
+   -------------------------------------------------------------------------- */
+.landing-root .lp-section {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+  /* honour iPhone notches / home indicator */
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+/* 1 — HERO: orange reigns, glow from up top. */
+.landing-root .lp-bg-hero {
+  background-image: radial-gradient(
+      125% 95% at 50% 4%,
+      rgba(255, 107, 30, 0.24) 0%,
+      rgba(255, 107, 30, 0.07) 40%,
+      transparent 70%
+    ),
+    radial-gradient(
+      80% 60% at 85% 100%,
+      rgba(212, 83, 126, 0.08) 0%,
+      transparent 65%
+    );
+}
+
+/* 2 — DUSK: orange, warmer and lower (the afternoon sinks). */
+.landing-root .lp-bg-dusk {
+  background-image: radial-gradient(
+      120% 85% at 50% 28%,
+      rgba(255, 107, 30, 0.2) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      95% 75% at 82% 96%,
+      rgba(239, 159, 39, 0.1) 0%,
+      transparent 70%
+    );
+}
+
+/* 3 — TOURNAMENT: orange -> amber, the heat of competition. */
+.landing-root .lp-bg-tournament {
+  background-image: radial-gradient(
+      120% 85% at 50% 14%,
+      rgba(239, 159, 39, 0.17) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      100% 80% at 18% 98%,
+      rgba(255, 107, 30, 0.16) 0%,
+      transparent 66%
+    );
+}
+
+/* 4 — NIGHT: the pivot. magenta takes over, orange recedes. */
+.landing-root .lp-bg-night {
+  background-image: radial-gradient(
+      125% 90% at 50% 12%,
+      rgba(212, 83, 126, 0.24) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      85% 70% at 88% 92%,
+      rgba(255, 107, 30, 0.07) 0%,
+      transparent 70%
+    );
+}
+
+/* 5 — EDITIONS: magenta night. */
+.landing-root .lp-bg-editions {
+  background-image: radial-gradient(
+      120% 85% at 50% 24%,
+      rgba(212, 83, 126, 0.2) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      80% 65% at 15% 95%,
+      rgba(212, 83, 126, 0.1) 0%,
+      transparent 68%
+    );
+}
+
+/* 6 — REGISTER: climax. a single warm orange+magenta pool, centred, where the
+   3D ball will later fall. */
+.landing-root .lp-bg-register {
+  background-image: radial-gradient(
+      95% 75% at 50% 52%,
+      rgba(255, 107, 30, 0.2) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      85% 75% at 50% 60%,
+      rgba(212, 83, 126, 0.22) 0%,
+      transparent 62%
+    );
+}
+
+/* ----------------------------------------------------------------------------
+   Data card (arcade tile): faint glass surface, hairline border.
+   -------------------------------------------------------------------------- */
+.landing-root .lp-card {
+  background: var(--lp-card-bg);
+  border: 1px solid var(--lp-card-border);
+  border-radius: 12px;
+}
+
+/* ----------------------------------------------------------------------------
+   CTA — solid orange, dark ink text. The one thing we want pressed.
+   -------------------------------------------------------------------------- */
+.landing-root .lp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--lp-font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+  color: var(--lp-night);
+  background-color: var(--lp-orange);
+  border-radius: 13px;
+  padding: 1rem 1.75rem;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 10px 30px -12px rgba(255, 107, 30, 0.7);
+}
+.landing-root .lp-cta:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 38px -12px rgba(255, 107, 30, 0.8);
+}
+.landing-root .lp-cta:active {
+  transform: translateY(0);
+}
+.landing-root .lp-cta:focus-visible {
+  outline: 3px solid var(--lp-cream);
+  outline-offset: 3px;
+}
+
+/* ----------------------------------------------------------------------------
+   Capacity meter — status dot + count + progress bar.
+   Status colour is driven by a CSS var the component sets per variant.
+   -------------------------------------------------------------------------- */
+.landing-root .lp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--lp-font-mono);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--lp-status, var(--lp-lime));
+}
+.landing-root .lp-status-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 9999px;
+  background-color: var(--lp-status, var(--lp-lime));
+  box-shadow: 0 0 12px 0 var(--lp-status, var(--lp-lime));
+  flex: none;
+}
+
+.landing-root .lp-meter-track {
+  position: relative;
+  width: 100%;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: rgba(255, 246, 236, 0.08);
+  overflow: hidden;
+}
+.landing-root .lp-meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--lp-orange), var(--lp-magenta));
+}
+
+/* ----------------------------------------------------------------------------
+   DJ "hidden" tile — silhouette box + redacted mono line. Pure placeholder.
+   -------------------------------------------------------------------------- */
+.landing-root .lp-dj-thumb {
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: none;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-family: var(--lp-font-mono);
+  font-size: 1.25rem;
+  color: var(--lp-cream-faint);
+  background: linear-gradient(
+    140deg,
+    rgba(212, 83, 126, 0.22),
+    rgba(255, 107, 30, 0.12)
+  );
+  border: 1px solid var(--lp-card-border-strong);
+}
+
+/* ----------------------------------------------------------------------------
+   Form field shell (register placeholder — NOT wired to anything yet).
+   -------------------------------------------------------------------------- */
+.landing-root .lp-field {
+  width: 100%;
+  font-family: var(--lp-font-body);
+  font-size: 1rem;
+  color: var(--lp-cream);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--lp-card-border-strong);
+  border-radius: 11px;
+  padding: 0.85rem 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.landing-root .lp-field::placeholder {
+  color: var(--lp-cream-faint);
+}
+.landing-root .lp-field:focus {
+  outline: none;
+  border-color: var(--lp-orange);
+  box-shadow: 0 0 0 3px rgba(255, 107, 30, 0.25);
+}
+
+/* ----------------------------------------------------------------------------
+   Editions scoreboard row — roman numeral, dotted leader, result.
+   -------------------------------------------------------------------------- */
+.landing-root .lp-edition-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-family: var(--lp-font-mono);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--lp-card-border);
+}
+.landing-root .lp-edition-leader {
+  flex: 1;
+  min-width: 1.5rem;
+  border-bottom: 1px dotted var(--lp-cream-faint);
+  transform: translateY(-0.3rem);
+}
+
+/* ----------------------------------------------------------------------------
+   Scroll cue — a slow nudge so it reads as "keep going" without a library.
+   Respects reduced-motion.
+   -------------------------------------------------------------------------- */
+.landing-root .lp-scroll-cue {
+  animation: lp-bob 1.8s ease-in-out infinite;
+}
+@keyframes lp-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-root .lp-scroll-cue {
+    animation: none;
+  }
+}
