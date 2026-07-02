@@ -12,7 +12,7 @@ const PCT = Math.round((FILLED / TOTAL) * 100);
         <span class="eyebrow hero-anim"><span class="dot"></span>6 de agosto · Polideportivo</span>
         <h1 class="h1"><span class="word hero-anim">Beerpong</span> <span class="iv hero-anim">IV</span></h1>
         <p class="lede hero-anim">
-          El torneo de cerveza pong del pueblo. <b>48 equipos</b>, una noche, un solo campeón. Y
+          El torneo de verano del pueblo. <b>48 equipos</b>, una noche, un solo campeón. Y
           cuando cae el último vaso, empieza la fiesta.
         </p>
       </div>
@@ -24,11 +24,12 @@ const PCT = Math.round((FILLED / TOTAL) * 100);
             <div class="board-num" id="freeNum">{FREE}</div>
             <div class="board-label">Plazas libres</div>
           </div>
-          <span class="status"><span class="led"></span>Últimas plazas</span>
+          <span class="status" id="statusPill"><span class="led"></span><span class="status-text">Últimas plazas</span></span>
         </div>
         <div class="bar"><span id="barFill" style={`--target:${PCT}%`}></span></div>
         <div class="bar-cap"><span id="filledNum" data-count-to={FILLED}>{FILLED}</span> / {TOTAL} equipos inscritos</div>
-        <a class="cta" href="#inscripcion">Inscribe tu equipo <span class="arrow">→</span></a>
+        <p class="board-wait" id="boardWait" hidden></p>
+        <a class="cta" href="#inscripcion"><span class="cta-label">Inscribe tu equipo</span> <span class="arrow">→</span></a>
       </div>
 
       <!-- cup rack -->
@@ -68,6 +69,122 @@ const PCT = Math.round((FILLED / TOTAL) * 100);
     </div>
   </div>
 </section>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const TOTAL_PLAZAS = 48;
+
+  const filled = document.getElementById('filledNum');
+  const freeNum = document.getElementById('freeNum');
+  const bar = document.getElementById('barFill');
+  const statusPill = document.getElementById('statusPill');
+  const statusText = statusPill?.querySelector<HTMLElement>('.status-text');
+  const led = statusPill?.querySelector<HTMLElement>('.led');
+  const boardWait = document.getElementById('boardWait');
+  const ctaLabel = document.querySelector<HTMLElement>('.cta .cta-label');
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function statusFor(libres: number) {
+    if (libres <= 0) return { text: 'Completo · lista de espera', color: 'var(--magenta)' };
+    if (libres <= 6) return { text: 'Últimas plazas', color: 'var(--amber)' };
+    return { text: 'Plazas libres', color: 'var(--lime)' };
+  }
+
+  function applyStats(inscritos: number, espera: number, animate: boolean) {
+    const clamped = Math.max(0, Math.min(TOTAL_PLAZAS, Math.round(inscritos)));
+    const libres = TOTAL_PLAZAS - clamped;
+    const esperaN = Math.max(0, Math.round(espera));
+    const pct = `${Math.round((clamped / TOTAL_PLAZAS) * 100)}%`;
+    const completo = libres <= 0;
+
+    // objetivo del count-up (lo lee GSAP) + destino de la barra
+    if (filled) filled.dataset.countTo = String(clamped);
+    if (bar) bar.style.setProperty('--target', pct);
+
+    // número grande de plazas libres — directo (no lo anima GSAP)
+    if (freeNum) freeNum.textContent = String(libres).padStart(2, '0');
+
+    // LED de estado semántico
+    const s = statusFor(libres);
+    if (statusText) statusText.textContent = s.text;
+    if (statusPill) statusPill.style.color = s.color;
+    if (led) {
+      led.style.background = s.color;
+      led.style.boxShadow = `0 0 10px ${s.color}`;
+    }
+
+    // subtítulo dinámico de lista de espera (solo cuando está completo)
+    if (boardWait) {
+      if (completo) {
+        boardWait.textContent = `● Completo · ${esperaN} en lista de espera`;
+        boardWait.hidden = false;
+      } else {
+        boardWait.hidden = true;
+      }
+    }
+
+    // la CTA no desaparece: reorienta a lista de espera cuando está completo
+    if (ctaLabel) ctaLabel.textContent = completo ? 'Únete a la lista de espera' : 'Inscribe tu equipo';
+
+    // difunde el estado para que la sección final (formulario) reaccione
+    const detail = { inscritos: clamped, libres, espera: esperaN, completo };
+    (window as unknown as { __stats?: typeof detail }).__stats = detail;
+    document.dispatchEvent(new CustomEvent('stats:update', { detail }));
+
+    if (animate && !reduce) {
+      // deja que el count-up de GSAP anime hasta el valor real
+      (window as unknown as { __statsReady?: boolean }).__statsReady = true;
+      document.dispatchEvent(new CustomEvent('stats:ready'));
+    } else {
+      // realtime o reduced-motion: número y barra directos, sin re-animar (no salta)
+      if (filled) filled.textContent = String(clamped);
+      if (bar) bar.style.width = pct;
+    }
+  }
+
+  type StatsRow = { equipos_count?: number; espera_count?: number };
+
+  async function init() {
+    if (!supabase) return; // sin env: se queda con el valor por defecto del marcador
+
+    try {
+      // select('*') tolera que espera_count aún no exista (antes de correr el SQL)
+      const { data, error } = await supabase.from('stats').select('*').eq('id', 1).single();
+      if (error || !data) return;
+      const row = data as StatsRow;
+      applyStats(Number(row.equipos_count ?? 0), Number(row.espera_count ?? 0), true);
+    } catch {
+      return; // fallo de lectura: no rompas la página, deja el default
+    }
+
+    // Realtime: el contador se mueve solo al cambiar la fila de stats
+    const channel = supabase
+      .channel('stats')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'stats' },
+        (payload) => {
+          const next = payload.new as StatsRow | null;
+          if (next && typeof next.equipos_count === 'number') {
+            applyStats(next.equipos_count, Number(next.espera_count ?? 0), false);
+          }
+        }
+      )
+      .subscribe();
+
+    window.addEventListener(
+      'beforeunload',
+      () => {
+        supabase.removeChannel(channel);
+      },
+      { once: true }
+    );
+  }
+
+  init();
+</script>
 
 <style>
   .hero {
@@ -192,6 +309,15 @@ const PCT = Math.round((FILLED / TOTAL) * 100);
     font-size: 0.68rem;
     letter-spacing: 0.06em;
     color: var(--muted);
+  }
+
+  .board-wait {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--magenta);
   }
 
   .cta {

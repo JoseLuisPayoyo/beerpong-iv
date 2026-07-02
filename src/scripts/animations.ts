@@ -42,25 +42,40 @@ function setupCounter() {
   const bar = document.getElementById('barFill');
   if (!board || !filled || !bar) return;
 
-  const target = counterTarget(filled);
-  const pct = bar.style.getPropertyValue('--target') || '0%';
   filled.textContent = '0';
+  let done = false;
+
+  const run = () => {
+    if (done) return;
+    done = true;
+    // Lee el objetivo AHORA: Supabase ya habrá fijado data-count-to / --target si respondió.
+    const target = counterTarget(filled);
+    const pct = bar.style.getPropertyValue('--target') || '0%';
+    const counter = { v: 0 };
+    gsap.to(counter, {
+      v: target,
+      duration: 1.4,
+      ease: 'power2.out',
+      onUpdate: () => {
+        filled.textContent = String(Math.round(counter.v));
+      },
+    });
+    gsap.to(bar, { width: pct, duration: 1.4, ease: 'power2.out' });
+  };
 
   ScrollTrigger.create({
     trigger: board,
     start: 'top 85%',
     once: true,
     onEnter: () => {
-      const counter = { v: 0 };
-      gsap.to(counter, {
-        v: target,
-        duration: 1.4,
-        ease: 'power2.out',
-        onUpdate: () => {
-          filled.textContent = String(Math.round(counter.v));
-        },
-      });
-      gsap.to(bar, { width: pct, duration: 1.4, ease: 'power2.out' });
+      // Coordinación con Supabase: anima hasta el valor real cuando esté listo.
+      if ((window as unknown as { __statsReady?: boolean }).__statsReady) {
+        run();
+        return;
+      }
+      document.addEventListener('stats:ready', run, { once: true });
+      // Fallback: si Supabase no responde, anima igualmente con el default tras un margen.
+      window.setTimeout(run, 1500);
     },
   });
 }

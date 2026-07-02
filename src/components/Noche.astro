@@ -1,5 +1,5 @@
 ---
-
+const horas = ['20:00', '00:00', '02:00'];
 ---
 
 <section class="section noche">
@@ -9,20 +9,41 @@
         <span class="eyebrow"><span class="dot"></span>La noche</span>
         <p class="quote">Cuando cae el<br />último vaso,<br /><em>empieza la fiesta</em></p>
         <p class="noche-copy">
-          Barra hasta el cierre y sesión de DJs hasta que salga el sol. El cartel se irá desvelando
+          Barra hasta el cierre y sesión de DJs hasta que el cuerpo aguante. El cartel se irá desvelando
           poco a poco.
         </p>
       </div>
       <div class="dj-card reveal">
-        <div class="dj-row">
-          <span class="hidden-name">DJ ▓▓▓</span><span class="tag">techno melódico · 19:00</span>
-        </div>
-        <div class="dj-row">
-          <span class="hidden-name">DJ ▓▓▓</span><span class="tag">B2B · house · 00:30</span>
-        </div>
-        <div class="dj-row">
-          <span class="hidden-name">DJ ▓▓▓</span><span class="tag">cierre · ??? · 03:00</span>
-        </div>
+        <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+          <symbol id="dj" viewBox="0 0 48 48">
+            <g fill="currentColor">
+              <path d="M6 47 C6 34 13 28 24 28 C35 28 42 34 42 47 Z"></path>
+              <ellipse cx="24" cy="18" rx="11.5" ry="12"></ellipse>
+              <rect x="7.5" y="16" width="6" height="13" rx="3"></rect>
+              <rect x="34.5" y="16" width="6" height="13" rx="3"></rect>
+            </g>
+            <path
+              d="M10 20 Q24 3 38 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="4"
+              stroke-linecap="round"></path>
+          </symbol>
+        </svg>
+
+        {
+          horas.map((hora) => (
+            <div class="dj-row">
+              <span class="dj-id">
+                <svg class="dj-ico" role="img" aria-label="DJ por confirmar">
+                  <use href="#dj" />
+                </svg>
+                <span class="hidden-name">DJ por confirmar</span>
+              </span>
+              <span class="tag">{hora}</span>
+            </div>
+          ))
+        }
       </div>
     </div>
   </div>
@@ -99,6 +120,19 @@
 
   .dj-row:last-child {
     border-bottom: none;
+  }
+
+  .dj-id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dj-ico {
+    width: 44px;
+    height: 44px;
+    color: var(--cream);
+    flex-shrink: 0;
   }
 
   .dj-row .hidden-name {

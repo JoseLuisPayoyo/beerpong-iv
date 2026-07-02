@@ -5,34 +5,173 @@
 <section class="close" id="inscripcion">
   <div class="wrap">
     <div class="reveal">
-      <span class="eyebrow"><span class="dot"></span>Inscripción abierta</span>
-      <h2>Coge tu<br />plaza</h2>
-      <p>Solo 48 equipos. Cuando se llenan, se llenan. Rellena los datos y guardamos tu sitio.</p>
+      <span class="eyebrow"><span class="dot"></span><span id="closeEyebrow">Inscripción abierta</span></span>
+      <h2 id="closeTitle">Coge tu<br />plaza</h2>
+      <p id="closeCopy">Solo 48 equipos. Cuando se llenan, se llenan. Rellena los datos y guardamos tu sitio.</p>
+      <p class="close-reason" id="closeReason" hidden>Cada año se cae algún equipo. Si se libera una plaza, avisamos por orden de lista.</p>
     </div>
-    <div class="form reveal">
-      <div class="field">
-        <label for="team">Nombre del equipo</label>
-        <input id="team" name="team" type="text" placeholder="Los Vasos Voladores" autocomplete="off" required />
-      </div>
-      <div class="row2">
+    <div class="form-wrap reveal">
+      <form class="form" id="inscribir-form" novalidate>
         <div class="field">
-          <label for="p1">Participante 1</label>
-          <input id="p1" name="p1" type="text" placeholder="Nombre y apellido" autocomplete="off" required />
+          <label for="team">Nombre del equipo</label>
+          <input id="team" name="team" type="text" placeholder="Los Vasos Voladores" autocomplete="off" required />
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="p1">Participante 1</label>
+            <input id="p1" name="p1" type="text" placeholder="Nombre y apellido" autocomplete="off" required />
+          </div>
+          <div class="field">
+            <label for="p2">Participante 2</label>
+            <input id="p2" name="p2" type="text" placeholder="Nombre y apellido" autocomplete="off" required />
+          </div>
         </div>
         <div class="field">
-          <label for="p2">Participante 2</label>
-          <input id="p2" name="p2" type="text" placeholder="Nombre y apellido" autocomplete="off" required />
+          <label for="tel">Teléfono de contacto</label>
+          <input id="tel" name="tel" type="tel" inputmode="tel" placeholder="600 123 456" autocomplete="tel" required />
         </div>
-      </div>
-      <div class="field">
-        <label for="tel">Teléfono de contacto</label>
-        <input id="tel" name="tel" type="tel" inputmode="tel" placeholder="600 123 456" autocomplete="tel" required />
-      </div>
-      <button class="submit" type="button">Reservar plaza →</button>
-      <p class="fineprint">Pago por Bizum al confirmar · Quedan 6 de 48 plazas</p>
+
+        <!-- honeypot: fuera de pantalla y oculto a AT, no display:none -->
+        <div class="hp" aria-hidden="true">
+          <label for="web">No rellenar este campo</label>
+          <input id="web" name="web" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <button class="submit" type="submit">Reservar plaza →</button>
+        <p class="fineprint">Pago por Bizum o efectivo al confirmar · Quedan 6 de 48 plazas</p>
+        <p class="form-msg" id="form-msg" role="alert" aria-live="assertive"></p>
+      </form>
+
+      <div class="form-success" id="form-success" role="status" aria-live="polite" hidden></div>
     </div>
   </div>
 </section>
+
+<script>
+  const form = document.getElementById('inscribir-form') as HTMLFormElement | null;
+  const msg = document.getElementById('form-msg');
+  const success = document.getElementById('form-success');
+  const submitBtn = form?.querySelector<HTMLButtonElement>('.submit') ?? null;
+
+  const eyebrow = document.getElementById('closeEyebrow');
+  const title = document.getElementById('closeTitle');
+  const copy = document.getElementById('closeCopy');
+  const reason = document.getElementById('closeReason');
+
+  const val = (id: string) =>
+    (document.getElementById(id) as HTMLInputElement | null)?.value.trim() ?? '';
+
+  // Texto del botón en reposo según el modo (inscripción / lista de espera).
+  let idleLabel = 'Reservar plaza →';
+  let sending = false;
+
+  function showError(text: string) {
+    if (msg) msg.textContent = text;
+  }
+  function clearError() {
+    if (msg) msg.textContent = '';
+  }
+  function setSending(isSending: boolean) {
+    sending = isSending;
+    if (!submitBtn) return;
+    submitBtn.disabled = isSending;
+    submitBtn.textContent = isSending ? 'Enviando…' : idleLabel;
+  }
+
+  // Modo lista de espera: reacciona al estado real de stats (vía Hero).
+  function applyMode(completo: boolean) {
+    if (completo) {
+      idleLabel = 'Únete a la lista de espera';
+      if (eyebrow) eyebrow.textContent = 'Lista de espera';
+      if (title) title.innerHTML = 'Lista de<br />espera';
+      if (copy)
+        copy.textContent =
+          'Las 48 plazas están completas. Apúntate a la lista de espera y te guardamos el turno.';
+      if (reason) reason.hidden = false;
+    } else {
+      idleLabel = 'Reservar plaza →';
+      if (eyebrow) eyebrow.textContent = 'Inscripción abierta';
+      if (title) title.innerHTML = 'Coge tu<br />plaza';
+      if (copy)
+        copy.textContent =
+          'Solo 48 equipos. Cuando se llenan, se llenan. Rellena los datos y guardamos tu sitio.';
+      if (reason) reason.hidden = true;
+    }
+    // no pises el "Enviando…" en curso
+    if (submitBtn && !sending) submitBtn.textContent = idleLabel;
+  }
+
+  // Estado inicial (correcto al cargar) + en vivo por el mismo canal Realtime del contador.
+  const cached = (window as unknown as { __stats?: { completo?: boolean } }).__stats;
+  if (cached) applyMode(Boolean(cached.completo));
+  document.addEventListener('stats:update', (event) => {
+    const detail = (event as CustomEvent<{ completo?: boolean }>).detail;
+    applyMode(Boolean(detail?.completo));
+  });
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    clearError();
+
+    const payload = {
+      nombre_equipo: val('team'),
+      participante_1: val('p1'),
+      participante_2: val('p2'),
+      telefono: val('tel'),
+      web: (document.getElementById('web') as HTMLInputElement | null)?.value ?? '',
+    };
+
+    // validación de cliente ligera (cortesía); la de verdad es la del servidor
+    if (
+      !payload.nombre_equipo ||
+      !payload.participante_1 ||
+      !payload.participante_2 ||
+      !payload.telefono
+    ) {
+      showError('Rellena todos los campos, por favor.');
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      const res = await fetch('/api/inscribir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res
+        .json()
+        .catch(() => ({}) as { error?: string; estado?: string; posicion?: number | null });
+
+      if (!res.ok) {
+        showError(data.error || 'No se pudo enviar. Inténtalo de nuevo.');
+        setSending(false);
+        return;
+      }
+
+      // éxito: sustituye el formulario por el mensaje. El contador se actualiza solo (Realtime).
+      if (form) form.hidden = true;
+      if (success) {
+        if (data.estado === 'espera') {
+          const puesto =
+            typeof data.posicion === 'number' ? `, vas en el puesto nº ${data.posicion}` : '';
+          success.innerHTML =
+            `<h3>Estás en la lista de espera</h3><p>Las 48 plazas están completas — te hemos apuntado en la lista de espera${puesto}. Si se libera una plaza, avisamos por orden.</p>`;
+        } else {
+          success.innerHTML =
+            '<h3>¡Equipo inscrito!</h3><p>Nos pondremos en contacto para el pago (Bizum o efectivo).</p>';
+        }
+        success.hidden = false;
+        success.setAttribute('tabindex', '-1');
+        success.focus();
+      }
+    } catch {
+      showError('No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.');
+      setSending(false);
+    }
+  });
+</script>
 
 <style>
   .close {
@@ -62,6 +201,16 @@
     margin-top: 16px;
     font-size: 1.1rem;
     color: var(--cream);
+  }
+
+  .close-reason {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    max-width: 46ch;
+    margin-top: 12px;
+    color: var(--cream);
+    opacity: 0.9;
   }
 
   .form {
@@ -138,5 +287,59 @@
     font-size: 0.72rem;
     color: var(--cream);
     margin-top: 16px;
+  }
+
+  /* honeypot: accesiblemente oculto pero presente en el DOM (no display:none) */
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* mensaje de error inline: chip oscuro para legibilidad sobre el rojo */
+  .form-msg {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--cream);
+  }
+
+  .form-msg:empty {
+    display: none;
+  }
+
+  .form-msg:not(:empty) {
+    background: rgba(23, 14, 17, 0.4);
+    border: 1px solid rgba(23, 14, 17, 0.55);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  /* mensaje de confirmación que reemplaza al formulario */
+  .form-success {
+    margin-top: 38px;
+    max-width: 560px;
+  }
+
+  .form-success h3 {
+    font-family: var(--display);
+    text-transform: uppercase;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    line-height: 0.95;
+    color: var(--cream);
+  }
+
+  .form-success p {
+    margin-top: 12px;
+    max-width: 44ch;
+    font-size: 1.05rem;
+    color: var(--cream);
+  }
+
+  .form-success:focus {
+    outline: none;
   }
 </style>
