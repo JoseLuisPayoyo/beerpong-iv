@@ -9,6 +9,7 @@
       <h2 id="closeTitle">Coge tu<br />plaza</h2>
       <p id="closeCopy">Solo 48 equipos. Cuando se llenan, se llenan. Rellena los datos y guardamos tu sitio.</p>
       <p class="close-reason" id="closeReason" hidden>Cada año se cae algún equipo. Si se libera una plaza, avisamos por orden de lista.</p>
+      <p class="close-venue">📍 Polideportivo de Cabra del Santo Cristo (junto a la Plaza de los Nativos Ausentes)</p>
     </div>
     <div class="form-wrap reveal">
       <form class="form" id="inscribir-form" novalidate>
@@ -38,7 +39,7 @@
         </div>
 
         <button class="submit" type="submit">Reservar plaza →</button>
-        <p class="fineprint">Pago por Bizum o efectivo al confirmar</p>
+        <p class="fineprint">Inscripción: 10€ por equipo · Bizum o efectivo</p>
         <p class="form-msg" id="form-msg" role="alert" aria-live="assertive"></p>
       </form>
 
@@ -165,7 +166,7 @@
             `<span class="success-ico">${clockIco}</span><h3>Estás en la lista de espera</h3><p>Las 48 plazas están completas — os hemos apuntado en la lista de espera${puesto}. Si se libera una plaza, avisamos.</p>`;
         } else {
           success.innerHTML =
-            `<span class="success-ico">${checkIco}</span><h3>¡Equipo inscrito!</h3><p>Nos pondremos en contacto para el pago (Bizum o efectivo).</p>`;
+            `<span class="success-ico">${checkIco}</span><h3>¡Equipo inscrito!</h3><p>Nos pondremos en contacto para el pago: 10€ por equipo (Bizum o efectivo).</p>`;
         }
         success.hidden = false;
         success.setAttribute('tabindex', '-1');
@@ -216,6 +217,16 @@
     line-height: 1.5;
     max-width: 46ch;
     margin-top: 12px;
+    color: var(--cream);
+    opacity: 0.9;
+  }
+
+  .close-venue {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    max-width: 46ch;
+    margin-top: 16px;
     color: var(--cream);
     opacity: 0.9;
   }
