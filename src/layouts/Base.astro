@@ -7,13 +7,7 @@ import '@fontsource/space-mono/400.css';
 import '@fontsource/space-mono/700.css';
 import '../styles/tokens.css';
 import '../styles/global.css';
-
-interface Props {
-  title: string;
-  description: string;
-}
-
-const { title, description } = Astro.props;
+import Analytics from '@vercel/analytics/astro';
 ---
 
 <!doctype html>
@@ -21,12 +15,16 @@ const { title, description } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
+    <meta
+      name="description"
+      content="IV edición del torneo de beer pong del pueblo. 6 de agosto en el Polideportivo: 48 equipos, DJs y fiesta hasta el amanecer. Solo 48 plazas — inscribe tu equipo."
+    />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>{title}</title>
+    <title>Beerpong IV · Inscribe tu equipo · 6 de agosto</title>
+    <Analytics />
   </head>
   <body>
     <div class="sky" aria-hidden="true">
