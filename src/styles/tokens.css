@@ -1,0 +1,20 @@
+/* Design tokens — Beerpong IV */
+:root {
+  /* color */
+  --night: #170e11;
+  --night-2: #20141a;
+  --panel: #23151b;
+  --cup: #ec3a2c;
+  --cup-deep: #b3251a;
+  --cream: #f7efe2;
+  --amber: #f6a72c;
+  --magenta: #ff3f8b;
+  --lime: #b6d94c;
+  --muted: #b8a79c;
+  --line: rgba(247, 239, 226, 0.12);
+
+  /* type */
+  --display: "Anton", Impact, sans-serif;
+  --sans: "Space Grotesk", system-ui, sans-serif;
+  --mono: "Space Mono", monospace;
+}

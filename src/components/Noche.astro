@@ -1,0 +1,113 @@
+---
+
+---
+
+<section class="section noche">
+  <div class="wrap">
+    <div class="noche-flex">
+      <div class="reveal">
+        <span class="eyebrow"><span class="dot"></span>La noche</span>
+        <p class="quote">Cuando cae el<br />último vaso,<br /><em>empieza la fiesta</em></p>
+        <p class="noche-copy">
+          Barra hasta el cierre y sesión de DJs hasta que salga el sol. El cartel se irá desvelando
+          poco a poco.
+        </p>
+      </div>
+      <div class="dj-card reveal">
+        <div class="dj-row">
+          <span class="hidden-name">DJ ▓▓▓</span><span class="tag">techno melódico · 19:00</span>
+        </div>
+        <div class="dj-row">
+          <span class="hidden-name">DJ ▓▓▓</span><span class="tag">B2B · house · 00:30</span>
+        </div>
+        <div class="dj-row">
+          <span class="hidden-name">DJ ▓▓▓</span><span class="tag">cierre · ??? · 03:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .noche {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .noche::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse at 80% 20%, rgba(236, 58, 44, 0.18), transparent 55%),
+      radial-gradient(ellipse at 10% 90%, rgba(255, 63, 139, 0.12), transparent 50%);
+  }
+
+  .noche .wrap {
+    position: relative;
+    z-index: 1;
+  }
+
+  .noche-flex {
+    display: grid;
+    gap: 30px;
+    align-items: center;
+  }
+
+  @media (min-width: 820px) {
+    .noche-flex {
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+  }
+
+  .quote {
+    font-family: var(--display);
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1;
+    text-transform: uppercase;
+    margin-top: 14px;
+  }
+
+  .quote em {
+    color: var(--cup);
+    font-style: normal;
+  }
+
+  .noche-copy {
+    margin-top: 20px;
+    color: var(--muted);
+    max-width: 40ch;
+  }
+
+  .dj-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 26px;
+  }
+
+  .dj-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--line);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+  }
+
+  .dj-row:last-child {
+    border-bottom: none;
+  }
+
+  .dj-row .hidden-name {
+    letter-spacing: 0.05em;
+  }
+
+  .dj-row .tag {
+    color: var(--muted);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+  }
+</style>

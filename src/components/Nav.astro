@@ -1,0 +1,69 @@
+---
+
+---
+
+<header class="topbar">
+  <nav class="wrap" aria-label="Principal">
+    <div class="brand">BEERPONG <b>IV</b></div>
+    <div class="meta">6 AGO 2026 · POLIDEPORTIVO</div>
+    <a href="#inscripcion" class="btn-mini">Inscribirse</a>
+  </nav>
+</header>
+
+<style>
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(23, 14, 17, 0.82);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbar .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+
+  .brand {
+    font-family: var(--display);
+    font-size: 1.35rem;
+    letter-spacing: 0.04em;
+  }
+
+  .brand b {
+    color: var(--cup);
+  }
+
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+
+  .btn-mini {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--cup);
+    color: var(--cream);
+    padding: 9px 16px;
+    border-radius: 100px;
+    font-weight: 700;
+    transition: transform 0.15s ease;
+  }
+
+  .btn-mini:hover {
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 720px) {
+    .meta {
+      display: none;
+    }
+  }
+</style>

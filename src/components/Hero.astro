@@ -1,0 +1,291 @@
+---
+const TOTAL = 48;
+const FILLED = 42;
+const FREE = String(TOTAL - FILLED).padStart(2, '0');
+const PCT = Math.round((FILLED / TOTAL) * 100);
+---
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-head">
+        <span class="eyebrow hero-anim"><span class="dot"></span>6 de agosto · Polideportivo</span>
+        <h1 class="h1"><span class="word hero-anim">Beerpong</span> <span class="iv hero-anim">IV</span></h1>
+        <p class="lede hero-anim">
+          El torneo de cerveza pong del pueblo. <b>48 equipos</b>, una noche, un solo campeón. Y
+          cuando cae el último vaso, empieza la fiesta.
+        </p>
+      </div>
+
+      <!-- scoreboard -->
+      <div class="board hero-anim" id="board">
+        <div class="board-top">
+          <div>
+            <div class="board-num" id="freeNum">{FREE}</div>
+            <div class="board-label">Plazas libres</div>
+          </div>
+          <span class="status"><span class="led"></span>Últimas plazas</span>
+        </div>
+        <div class="bar"><span id="barFill" style={`--target:${PCT}%`}></span></div>
+        <div class="bar-cap"><span id="filledNum" data-count-to={FILLED}>{FILLED}</span> / {TOTAL} equipos inscritos</div>
+        <a class="cta" href="#inscripcion">Inscribe tu equipo <span class="arrow">→</span></a>
+      </div>
+
+      <!-- cup rack -->
+      <div class="rack hero-anim" aria-hidden="true">
+        <svg viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <g id="cup">
+              <path d="M3 8 L37 8 L31 50 L9 50 Z" fill="var(--cup)"></path>
+              <path d="M3 8 L20 8 L16 50 L9 50 Z" fill="#f0553f" opacity=".55"></path>
+              <ellipse cx="20" cy="8" rx="17.2" ry="4.6" fill="var(--amber)"></ellipse>
+              <ellipse cx="20" cy="8" rx="12" ry="2.9" fill="var(--cup-deep)"></ellipse>
+            </g>
+          </defs>
+          <!-- fila 1 (fondo) -->
+          <use href="#cup" x="20" y="118"></use>
+          <use href="#cup" x="66" y="118"></use>
+          <use href="#cup" x="112" y="118"></use>
+          <!-- fila 2 -->
+          <use href="#cup" x="43" y="156"></use>
+          <use href="#cup" x="89" y="156"></use>
+          <!-- fila 3 (punta) -->
+          <use href="#cup" x="66" y="194"></use>
+          <!-- pelota -->
+          <g>
+            <circle class="ball" cx="86" cy="58" r="9" fill="var(--cream)"></circle>
+            <circle
+              class="ball"
+              cx="86"
+              cy="58"
+              r="9"
+              fill="none"
+              stroke="rgba(23,14,17,.12)"
+              stroke-width="1.5"></circle>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding: 72px 0 96px;
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    display: grid;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .h1 {
+    font-family: var(--display);
+    font-size: clamp(4.6rem, 17vw, 12rem);
+    line-height: 0.82;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    margin: 18px 0 6px;
+  }
+
+  .h1 .iv {
+    color: var(--cup);
+    display: inline-block;
+  }
+
+  .lede {
+    font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+    max-width: 34ch;
+    color: var(--cream);
+    opacity: 0.92;
+  }
+
+  .lede b {
+    color: var(--cup);
+    font-weight: 600;
+  }
+
+  /* panel marcador */
+  .board {
+    margin-top: 30px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 22px 24px;
+    max-width: 440px;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7);
+  }
+
+  .board-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .board-num {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 3.6rem;
+    line-height: 1;
+    color: var(--cup);
+  }
+
+  .board-label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .status {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    color: var(--amber);
+  }
+
+  .status .led {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 10px var(--amber);
+  }
+
+  .bar {
+    height: 9px;
+    border-radius: 100px;
+    background: rgba(247, 239, 226, 0.1);
+    margin: 18px 0 4px;
+    overflow: hidden;
+  }
+
+  .bar span {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--cup), var(--magenta));
+  }
+
+  /* estados iniciales de la entrada del hero (GSAP los revela) */
+  .hero-anim {
+    opacity: 0;
+  }
+
+  .h1 .word {
+    display: inline-block;
+  }
+
+  .bar-cap {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    margin-top: 20px;
+    background: var(--cup);
+    color: var(--cream);
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 15px 26px;
+    border-radius: 100px;
+    width: 100%;
+    justify-content: center;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px -8px rgba(236, 58, 44, 0.5);
+  }
+
+  .cta .arrow {
+    transition: transform 0.15s ease;
+  }
+
+  .cta:hover .arrow {
+    transform: translateX(4px);
+  }
+
+  /* rack de vasos */
+  .rack {
+    justify-self: center;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .rack svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.55));
+  }
+
+  .ball {
+    animation: toss 3.2s ease-in-out infinite alternate;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  @keyframes toss {
+    0% {
+      transform: translate(-46px, 34px) rotate(-40deg);
+    }
+    50% {
+      transform: translate(0, -6px) rotate(0deg);
+    }
+    100% {
+      transform: translate(46px, 34px) rotate(40deg);
+    }
+  }
+
+  @media (min-width: 920px) {
+    .hero-grid {
+      grid-template-columns: 1.25fr 0.75fr;
+      grid-template-areas: 'head rack' 'board rack';
+      column-gap: 48px;
+    }
+
+    .hero-head {
+      grid-area: head;
+    }
+
+    .board {
+      grid-area: board;
+      margin-top: 8px;
+    }
+
+    .rack {
+      grid-area: rack;
+      max-width: 360px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-anim {
+      opacity: 1;
+    }
+
+    .bar span {
+      width: var(--target, 88%) !important;
+    }
+  }
+</style>

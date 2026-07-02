@@ -1,0 +1,147 @@
+---
+import '@fontsource/anton';
+import '@fontsource/space-grotesk/400.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/700.css';
+import '@fontsource/space-mono/400.css';
+import '@fontsource/space-mono/700.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="sky" aria-hidden="true">
+      <div class="tint-night"></div>
+      <div class="celestial">
+        <svg class="sun" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#f6a72c" stroke-width="3" stroke-linecap="round">
+            <line x1="50" y1="6" x2="50" y2="20"></line>
+            <line x1="50" y1="80" x2="50" y2="94"></line>
+            <line x1="6" y1="50" x2="20" y2="50"></line>
+            <line x1="80" y1="50" x2="94" y2="50"></line>
+            <line x1="18.9" y1="18.9" x2="28.8" y2="28.8"></line>
+            <line x1="71.2" y1="71.2" x2="81.1" y2="81.1"></line>
+            <line x1="18.9" y1="81.1" x2="28.8" y2="71.2"></line>
+            <line x1="71.2" y1="28.8" x2="81.1" y2="18.9"></line>
+          </g>
+          <circle cx="50" cy="50" r="22" fill="#ffca62"></circle>
+          <circle cx="50" cy="50" r="22" fill="none" stroke="#f6a72c" stroke-width="2"></circle>
+        </svg>
+        <svg class="moon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="26" fill="#e9edf5"></circle>
+          <circle cx="42" cy="42" r="6" fill="#cdd6e4"></circle>
+          <circle cx="61" cy="55" r="8" fill="#cdd6e4"></circle>
+          <circle cx="52" cy="67" r="4" fill="#cdd6e4"></circle>
+        </svg>
+      </div>
+    </div>
+    <div class="ambient" aria-hidden="true"></div>
+    <slot />
+    <div class="grain" aria-hidden="true"></div>
+
+    <script>
+      import '../scripts/animations.ts';
+    </script>
+  </body>
+</html>
+
+<style>
+  /* cielo fijo tras el contenido: el astro cruza y tiñe día→noche */
+  .sky {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  /* veladura fría de noche; detrás del contenido, se funde al hacer scroll */
+  .tint-night {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: linear-gradient(180deg, rgba(22, 26, 54, 0.55), rgba(9, 11, 26, 0.8));
+  }
+
+  .celestial {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: clamp(80px, 11vw, 150px);
+    aspect-ratio: 1;
+    will-change: transform;
+  }
+
+  .sun,
+  .moon {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .sun {
+    filter: drop-shadow(0 0 24px rgba(246, 167, 44, 0.45));
+  }
+
+  .moon {
+    opacity: 0;
+    filter: drop-shadow(0 0 18px rgba(210, 220, 240, 0.35));
+  }
+
+  /* halo cálido tras el hero; scrollea con la página como en el mockup */
+  .ambient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 1100px;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ambient::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1000px;
+    height: 1000px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(246, 167, 44, 0.16),
+      rgba(236, 58, 44, 0.06) 42%,
+      transparent 68%
+    );
+  }
+
+  /* grano de película sobre toda la página */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>

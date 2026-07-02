@@ -1,0 +1,142 @@
+---
+
+---
+
+<section class="close" id="inscripcion">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="eyebrow"><span class="dot"></span>Inscripción abierta</span>
+      <h2>Coge tu<br />plaza</h2>
+      <p>Solo 48 equipos. Cuando se llenan, se llenan. Rellena los datos y guardamos tu sitio.</p>
+    </div>
+    <div class="form reveal">
+      <div class="field">
+        <label for="team">Nombre del equipo</label>
+        <input id="team" name="team" type="text" placeholder="Los Vasos Voladores" autocomplete="off" required />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="p1">Participante 1</label>
+          <input id="p1" name="p1" type="text" placeholder="Nombre y apellido" autocomplete="off" required />
+        </div>
+        <div class="field">
+          <label for="p2">Participante 2</label>
+          <input id="p2" name="p2" type="text" placeholder="Nombre y apellido" autocomplete="off" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="tel">Teléfono de contacto</label>
+        <input id="tel" name="tel" type="tel" inputmode="tel" placeholder="600 123 456" autocomplete="tel" required />
+      </div>
+      <button class="submit" type="button">Reservar plaza →</button>
+      <p class="fineprint">Pago por Bizum al confirmar · Quedan 6 de 48 plazas</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .close {
+    background: var(--cup);
+    color: var(--cream);
+    padding: 96px 0;
+  }
+
+  .close .eyebrow {
+    color: var(--cream);
+  }
+
+  .close .eyebrow .dot {
+    background: var(--cream);
+  }
+
+  .close h2 {
+    font-family: var(--display);
+    font-size: clamp(2.8rem, 8vw, 6rem);
+    line-height: 0.9;
+    text-transform: uppercase;
+    margin: 16px 0 0;
+  }
+
+  .close p {
+    max-width: 44ch;
+    margin-top: 16px;
+    font-size: 1.1rem;
+    color: var(--cream);
+  }
+
+  .form {
+    margin-top: 38px;
+    max-width: 560px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .form .field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .form label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--cream);
+  }
+
+  .form input {
+    font-family: var(--sans);
+    font-size: 1rem;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 2px solid rgba(23, 14, 17, 0.35);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--night);
+  }
+
+  .form input::placeholder {
+    color: rgba(23, 14, 17, 0.55);
+  }
+
+  .form input:focus {
+    outline: none;
+    border-color: var(--night);
+    background: #fff;
+  }
+
+  .form .row2 {
+    display: grid;
+    gap: 14px;
+  }
+
+  @media (min-width: 560px) {
+    .form .row2 {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .form .submit {
+    margin-top: 6px;
+    background: var(--night);
+    color: var(--cream);
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 16px;
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: transform 0.15s ease;
+  }
+
+  .form .submit:hover {
+    transform: translateY(-2px);
+  }
+
+  .fineprint {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--cream);
+    margin-top: 16px;
+  }
+</style>

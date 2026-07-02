@@ -1,0 +1,102 @@
+---
+const ediciones = [
+  { num: 'I', year: '2023', status: 'Sold out', now: false },
+  { num: 'II', year: '2024', status: 'Sold out', now: false },
+  { num: 'III', year: '2025', status: 'Sold out', now: false },
+  { num: 'IV', year: '2026', status: '¿Entras?', now: true },
+];
+---
+
+<section class="past wrap" aria-label="Ediciones anteriores">
+  <p class="sec-head">Ya ha pasado tres veces</p>
+  <h2 class="h2">Y siempre<br />se agota</h2>
+  <div class="past-rows">
+    {
+      ediciones.map(({ num, year, status, now }) => (
+        <div class:list={['prow', 'reveal', { now }]}>
+          <div class="ed-yr">
+            <span class="ed">{num}</span>
+            <span class="yr">{year}</span>
+          </div>
+          <span class="status">{status}</span>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .past {
+    margin: 80px auto;
+  }
+
+  .sec-head {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+
+  .h2 {
+    font-family: var(--display);
+    font-size: clamp(2.4rem, 6vw, 4.4rem);
+    line-height: 0.92;
+    text-transform: uppercase;
+    margin: 14px 0 0;
+  }
+
+  .past-rows {
+    margin-top: 26px;
+    border-top: 1px solid var(--line);
+  }
+
+  .prow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .ed-yr {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .prow .ed {
+    font-family: var(--display);
+    font-size: clamp(30px, 5vw, 54px);
+    color: var(--cream);
+    line-height: 1;
+  }
+
+  .prow .yr {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .prow .status {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 12px;
+  }
+
+  .prow.now .ed {
+    color: var(--cup);
+  }
+
+  .prow.now .status {
+    color: var(--lime);
+    border-color: rgba(182, 217, 76, 0.4);
+  }
+</style>

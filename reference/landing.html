@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beerpong IV — 6 de agosto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --noche:#17110E;
+    --noche-2:#211812;
+    --panel:#271C15;
+    --ambar:#FFB020;
+    --ambar-soft:#F59a12;
+    --rojo:#E8402C;
+    --crema:#F7EEDD;
+    --verde:#8FC93A;
+    --linea:rgba(247,238,221,.12);
+    --muted:rgba(247,238,221,.55);
+    --display:'Anton',system-ui,sans-serif;
+    --mono:'Space Mono',ui-monospace,monospace;
+    --body:'Inter',system-ui,sans-serif;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--body);
+    background:var(--noche);
+    color:var(--crema);
+    line-height:1.5;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* faint film grain over the whole page */
+  body::after{
+    content:"";
+    position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  ::selection{background:var(--ambar);color:var(--noche)}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:3px solid var(--ambar);outline-offset:3px;border-radius:2px}
+
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+
+  .mono{font-family:var(--mono)}
+  .eyebrow{
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--ambar);display:inline-flex;align-items:center;gap:.6em;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--ambar)}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    background:rgba(23,17,14,.82);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--linea);
+  }
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{font-family:var(--display);font-size:1.35rem;letter-spacing:.04em}
+  .brand b{color:var(--ambar)}
+  .topbar .meta{font-family:var(--mono);font-size:.74rem;letter-spacing:.14em;color:var(--muted)}
+  .topbar .btn-mini{
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--ambar);color:var(--noche);padding:9px 16px;border-radius:100px;font-weight:700;
+    transition:transform .15s ease;
+  }
+  .topbar .btn-mini:hover{transform:translateY(-1px)}
+  @media(max-width:720px){.topbar .meta{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;padding:72px 0 96px;overflow:hidden}
+  .hero::before{
+    content:"";position:absolute;top:-10%;left:50%;transform:translateX(-50%);
+    width:1000px;height:1000px;border-radius:50%;
+    background:radial-gradient(circle, rgba(255,176,32,.16), rgba(232,64,44,.06) 42%, transparent 68%);
+    z-index:0;
+  }
+  .hero .wrap{position:relative;z-index:1}
+  .hero-grid{display:grid;gap:40px;align-items:center}
+  .h1{
+    font-family:var(--display);
+    font-size:clamp(4.6rem,17vw,12rem);
+    line-height:.82;letter-spacing:.01em;text-transform:uppercase;
+    margin:18px 0 6px;
+  }
+  .h1 .iv{color:var(--ambar);display:inline-block}
+  .lede{font-size:clamp(1.05rem,2.4vw,1.35rem);max-width:34ch;color:var(--crema);opacity:.92}
+  .lede b{color:var(--ambar);font-weight:600}
+
+  /* scoreboard panel */
+  .board{
+    margin-top:30px;background:var(--panel);border:1px solid var(--linea);
+    border-radius:16px;padding:22px 24px;max-width:440px;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.7);
+  }
+  .board-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+  .board-num{font-family:var(--mono);font-weight:700;font-size:3.6rem;line-height:1;color:var(--ambar)}
+  .board-num small{font-size:1.1rem;color:var(--muted);font-weight:400}
+  .board-label{font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .status{font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:.55em;color:var(--ambar)}
+  .status .led{width:9px;height:9px;border-radius:50%;background:var(--ambar);box-shadow:0 0 10px var(--ambar)}
+  .bar{height:9px;border-radius:100px;background:rgba(247,238,221,.1);margin:18px 0 4px;overflow:hidden}
+  .bar span{display:block;height:100%;width:0;border-radius:100px;background:linear-gradient(90deg,var(--ambar),var(--rojo));transition:width 1.4s cubic-bezier(.2,.7,.2,1)}
+  .bar-cap{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;color:var(--muted)}
+  .cta{
+    display:inline-flex;align-items:center;gap:.6em;margin-top:20px;
+    background:var(--ambar);color:var(--noche);font-weight:700;
+    font-size:1rem;padding:15px 26px;border-radius:100px;width:100%;justify-content:center;
+    border:none;cursor:pointer;font-family:var(--body);
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .cta:hover{transform:translateY(-2px);box-shadow:0 12px 30px -8px rgba(255,176,32,.5)}
+  .cta .arrow{transition:transform .15s ease}
+  .cta:hover .arrow{transform:translateX(4px)}
+
+  /* cup rack svg */
+  .rack{justify-self:center;width:100%;max-width:320px}
+  .rack svg{width:100%;height:auto;display:block;filter:drop-shadow(0 24px 40px rgba(0,0,0,.55))}
+  .ball{animation:toss 3.2s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+  @keyframes toss{
+    0%{transform:translate(-46px,34px) rotate(-40deg)}
+    50%{transform:translate(0,-6px) rotate(0deg)}
+    100%{transform:translate(46px,34px) rotate(40deg)}
+  }
+
+  @media(min-width:920px){
+    .hero-grid{grid-template-columns:1.25fr .75fr;grid-template-areas:"head rack" "board rack";column-gap:48px}
+    .hero-head{grid-area:head}
+    .board{grid-area:board;margin-top:8px}
+    .rack{grid-area:rack;max-width:360px}
+  }
+
+  /* ---------- generic section ---------- */
+  .section{padding:96px 0;border-top:1px solid var(--linea)}
+  .section-head{max-width:52ch;margin-bottom:46px}
+  .section-head h2{
+    font-family:var(--display);font-size:clamp(2.4rem,6vw,4.4rem);
+    line-height:.92;text-transform:uppercase;margin:14px 0 0;
+  }
+  .section-head p{margin-top:16px;color:var(--muted);font-size:1.05rem;max-width:46ch}
+
+  /* torneo stats */
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--linea);border:1px solid var(--linea);border-radius:16px;overflow:hidden}
+  .stat{background:var(--noche-2);padding:30px 26px}
+  .stat .n{font-family:var(--mono);font-weight:700;font-size:2.6rem;color:var(--ambar);line-height:1}
+  .stat .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+  @media(min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+
+  /* noche */
+  .noche{position:relative;overflow:hidden}
+  .noche::before{
+    content:"";position:absolute;inset:0;z-index:0;
+    background:radial-gradient(ellipse at 80% 20%, rgba(232,64,44,.18), transparent 55%),
+               radial-gradient(ellipse at 10% 90%, rgba(212,83,126,.12), transparent 50%);
+  }
+  .noche .wrap{position:relative;z-index:1}
+  .noche-flex{display:grid;gap:30px;align-items:center}
+  @media(min-width:820px){.noche-flex{grid-template-columns:1.1fr .9fr}}
+  .quote{font-family:var(--display);font-size:clamp(2rem,5vw,3.4rem);line-height:1;text-transform:uppercase}
+  .quote em{color:var(--rojo);font-style:normal}
+  .dj-card{
+    background:var(--panel);border:1px solid var(--linea);border-radius:16px;padding:26px;
+  }
+  .dj-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px dashed var(--linea);font-family:var(--mono);font-size:.9rem}
+  .dj-row:last-child{border-bottom:none}
+  .dj-row .hidden-name{letter-spacing:.05em}
+  .dj-row .tag{color:var(--muted);font-size:.74rem;letter-spacing:.1em}
+
+  /* palmares */
+  .editions{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .ed{background:var(--noche-2);border:1px solid var(--linea);border-radius:16px;padding:28px 22px;text-align:center}
+  .ed .rn{font-family:var(--display);font-size:clamp(3rem,9vw,5.2rem);line-height:1;color:var(--crema)}
+  .ed .sold{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--rojo);border:1px solid var(--rojo);border-radius:100px;padding:5px 11px}
+  .ed .yr{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-top:10px}
+
+  /* final CTA on amber */
+  .close{background:var(--ambar);color:var(--noche);padding:96px 0}
+  .close .eyebrow{color:#5a3a08}
+  .close .eyebrow .dot{background:#5a3a08}
+  .close h2{font-family:var(--display);font-size:clamp(2.8rem,8vw,6rem);line-height:.9;text-transform:uppercase;margin:16px 0 0}
+  .close p{max-width:44ch;margin-top:16px;font-size:1.1rem;color:#3a2606}
+  .form{margin-top:38px;max-width:560px;display:grid;gap:14px}
+  .form .field{display:grid;gap:6px}
+  .form label{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:#5a3a08}
+  .form input{
+    font-family:var(--body);font-size:1rem;padding:14px 16px;border-radius:10px;
+    border:2px solid rgba(23,17,14,.25);background:rgba(255,255,255,.35);color:var(--noche);
+  }
+  .form input::placeholder{color:rgba(23,17,14,.4)}
+  .form input:focus{outline:none;border-color:var(--noche);background:rgba(255,255,255,.6)}
+  .form .row2{display:grid;gap:14px}
+  @media(min-width:560px){.form .row2{grid-template-columns:1fr 1fr}}
+  .form .submit{
+    margin-top:6px;background:var(--noche);color:var(--ambar);font-weight:700;font-size:1.05rem;
+    padding:16px;border-radius:100px;border:none;cursor:pointer;font-family:var(--body);
+    transition:transform .15s ease;
+  }
+  .form .submit:hover{transform:translateY(-2px)}
+  .close .fineprint{font-family:var(--mono);font-size:.72rem;color:#5a3a08;margin-top:16px}
+
+  /* footer */
+  footer{padding:48px 0;border-top:1px solid var(--linea);background:var(--noche)}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  footer .fbrand{font-family:var(--display);font-size:1.4rem}
+  footer .fbrand b{color:var(--ambar)}
+  footer .fmeta{font-family:var(--mono);font-size:.76rem;letter-spacing:.1em;color:var(--muted)}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+    .reveal{opacity:1;transform:none}
+    .bar span{width:var(--target,88%)!important}
+  }
+</style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand">BEERPONG <b>IV</b></div>
+      <div class="meta">6 AGO 2026 · POLIDEPORTIVO</div>
+      <a href="#inscripcion" class="btn-mini">Inscribirse</a>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div class="hero-head">
+          <span class="eyebrow"><span class="dot"></span>6 de agosto · Polideportivo</span>
+          <h1 class="h1">Beerpong <span class="iv">IV</span></h1>
+          <p class="lede">El torneo de cerveza pong del pueblo. <b>48 equipos</b>, una noche, un solo campeón. Y cuando cae el último vaso, empieza la fiesta.</p>
+        </div>
+
+        <!-- scoreboard -->
+        <div class="board reveal" id="board">
+          <div class="board-top">
+            <div>
+              <div class="board-num" id="freeNum">06</div>
+              <div class="board-label">Plazas libres</div>
+            </div>
+            <span class="status"><span class="led"></span>Últimas plazas</span>
+          </div>
+          <div class="bar"><span id="barFill" style="--target:88%"></span></div>
+          <div class="bar-cap"><span id="filledNum">42</span> / 48 equipos inscritos</div>
+          <button class="cta" onclick="document.getElementById('inscripcion').scrollIntoView({behavior:'smooth'})">
+            Inscribe tu equipo <span class="arrow">→</span>
+          </button>
+        </div>
+
+        <!-- cup rack -->
+        <div class="rack" aria-hidden="true">
+          <svg viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <g id="cup">
+                <path d="M3 8 L37 8 L31 50 L9 50 Z" fill="#E8402C"/>
+                <path d="M3 8 L20 8 L16 50 L9 50 Z" fill="#F0553f" opacity=".55"/>
+                <ellipse cx="20" cy="8" rx="17.2" ry="4.6" fill="#FFB020"/>
+                <ellipse cx="20" cy="8" rx="12" ry="2.9" fill="#8a2318"/>
+              </g>
+            </defs>
+            <!-- row 1 (back) -->
+            <use href="#cup" x="20" y="118"/>
+            <use href="#cup" x="66" y="118"/>
+            <use href="#cup" x="112" y="118"/>
+            <!-- row 2 -->
+            <use href="#cup" x="43" y="156"/>
+            <use href="#cup" x="89" y="156"/>
+            <!-- row 3 (point) -->
+            <use href="#cup" x="66" y="194"/>
+            <!-- ball -->
+            <g>
+              <circle class="ball" cx="86" cy="58" r="9" fill="#F7EEDD"/>
+              <circle class="ball" cx="86" cy="58" r="9" fill="none" stroke="rgba(23,17,14,.12)" stroke-width="1.5"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EL TORNEO -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow"><span class="dot"></span>El torneo</span>
+        <h2>Del sorteo<br>a la final</h2>
+        <p>Fase de grupos, mesas simultáneas y eliminatoria directa. Los árbitros cantan el resultado y el marcador se actualiza en directo para todo el pabellón.</p>
+      </div>
+      <div class="stats reveal">
+        <div class="stat"><div class="n">48</div><div class="k">Equipos</div></div>
+        <div class="stat"><div class="n">6</div><div class="k">Mesas</div></div>
+        <div class="stat"><div class="n">2</div><div class="k">Jugadores/equipo</div></div>
+        <div class="stat"><div class="n">1</div><div class="k">Campeón</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LA NOCHE -->
+  <section class="section noche">
+    <div class="wrap">
+      <div class="noche-flex">
+        <div class="reveal">
+          <span class="eyebrow"><span class="dot"></span>La noche</span>
+          <p class="quote" style="margin-top:14px">Cuando cae el<br>último vaso,<br><em>empieza la fiesta</em></p>
+          <p style="margin-top:20px;color:var(--muted);max-width:40ch">Barra hasta el cierre y sesión de DJs hasta que salga el sol. El cartel se irá desvelando poco a poco.</p>
+        </div>
+        <div class="dj-card reveal">
+          <div class="dj-row"><span class="hidden-name">DJ ▓▓▓</span><span class="tag">techno melódico · 19:00</span></div>
+          <div class="dj-row"><span class="hidden-name">DJ ▓▓▓</span><span class="tag">B2B · house · 00:30</span></div>
+          <div class="dj-row"><span class="hidden-name">DJ ▓▓▓</span><span class="tag">cierre · ??? · 03:00</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PALMARÉS -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow"><span class="dot"></span>Palmarés</span>
+        <h2>Tres ediciones.<br>Tres llenos.</h2>
+        <p>La cuarta no va a ser distinta. Por eso solo hay 48 plazas.</p>
+      </div>
+      <div class="editions reveal">
+        <div class="ed"><div class="rn">I</div><span class="sold">Sold out</span><div class="yr">2023</div></div>
+        <div class="ed"><div class="rn">II</div><span class="sold">Sold out</span><div class="yr">2024</div></div>
+        <div class="ed"><div class="rn">III</div><span class="sold">Sold out</span><div class="yr">2025</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CIERRE / INSCRIPCIÓN -->
+  <section class="close" id="inscripcion">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow"><span class="dot"></span>Inscripción abierta</span>
+        <h2>Coge tu<br>plaza</h2>
+        <p>Solo 48 equipos. Cuando se llenan, se llenan. Rellena los datos y guardamos tu sitio.</p>
+      </div>
+      <div class="form reveal">
+        <div class="field">
+          <label for="team">Nombre del equipo</label>
+          <input id="team" type="text" placeholder="Los Reyes del Rebote">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="cap">Capitán</label>
+            <input id="cap" type="text" placeholder="Nombre y apellidos">
+          </div>
+          <div class="field">
+            <label for="tel">Teléfono</label>
+            <input id="tel" type="tel" placeholder="600 000 000">
+          </div>
+        </div>
+        <button class="submit" type="button">Reservar plaza →</button>
+        <p class="fineprint">Pago por Bizum al confirmar · Quedan 6 de 48 plazas</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="wrap">
+      <div class="fbrand">BEERPONG <b>IV</b></div>
+      <div class="fmeta">6 AGO 2026 · POLIDEPORTIVO · 12:00 → CIERRE</div>
+    </div>
+  </footer>
+
+<script>
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // Scoreboard count-up + bar fill when it enters view
+  const board = document.getElementById('board');
+  const bar = document.getElementById('barFill');
+  const filled = document.getElementById('filledNum');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const boardIO = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting) return;
+      boardIO.unobserve(e.target);
+      // fill bar
+      requestAnimationFrame(()=>{ bar.style.width = '88%'; });
+      // count 0 -> 42
+      if(reduce){ filled.textContent = '42'; return; }
+      let n = 0; const target = 42;
+      const step = ()=>{ n += 2; if(n>=target){ filled.textContent = target; return;} filled.textContent = n; requestAnimationFrame(step); };
+      step();
+    });
+  },{threshold:.4});
+  boardIO.observe(board);
+</script>
+</body>
+</html>
