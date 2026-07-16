@@ -482,6 +482,205 @@ button.pc-pill:disabled {
   transform: none;
 }
 
+/* ---- eliminatoria: tira de rondas y tandas ---- */
+.pc-rounds {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.pc-round {
+  flex: 1;
+  text-align: center;
+  padding: 10px 4px;
+  border-radius: 9px;
+  border: 1px solid var(--bd2);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--tx2);
+  background: var(--panel);
+  cursor: pointer;
+  font-family: var(--bdf);
+}
+.pc-round.on {
+  border-color: var(--tx);
+  color: var(--tx);
+  background: var(--panel2);
+}
+.pc-round.lock,
+.pc-round:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pc-tanda {
+  margin-bottom: 22px;
+}
+.pc-tanda.locked {
+  opacity: 0.55;
+}
+.pc-tt-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+.pc-tt-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.pc-tt-sub {
+  font-size: 10.5px;
+  color: var(--tx3);
+  font-family: var(--mo);
+}
+.pc-mesa {
+  font-family: var(--mo);
+  font-size: 9.5px;
+  color: var(--am);
+  background: var(--amBg);
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-left: 5px;
+}
+
+/* ---- semis / final: marcador en directo ---- */
+.pc-live-card {
+  background: var(--panel);
+  border: 2px solid var(--pk);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.pc-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mo);
+  font-size: 10.5px;
+  letter-spacing: 1px;
+  color: var(--pk);
+  margin-bottom: 15px;
+}
+.pc-live-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pk);
+  animation: pcblink 1s infinite;
+}
+.pc-live-team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 2px;
+  gap: 10px;
+}
+.pc-live-team + .pc-live-team {
+  border-top: 1px solid var(--bdc);
+}
+.pc-live-team .ln {
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pc-live-team.lead .ln {
+  color: var(--li);
+}
+.pc-livestep {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.pc-lsb {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--bd2);
+  background: #fff;
+  font-size: 19px;
+  cursor: pointer;
+  color: var(--tx);
+}
+.pc-lsb:active {
+  transform: scale(0.94);
+}
+.pc-lsb:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+.pc-lsv {
+  width: 34px;
+  text-align: center;
+  font-family: var(--mo);
+  font-size: 24px;
+  font-weight: 700;
+}
+.pc-seal {
+  width: 100%;
+  min-height: 45px;
+  border: none;
+  border-radius: 10px;
+  background: var(--pk);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+  font-family: var(--bdf);
+}
+.pc-seal:disabled {
+  background: var(--bd2);
+  color: var(--tx3);
+  cursor: default;
+}
+.pc-match-done {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--bdc);
+  border-radius: 11px;
+  margin-bottom: 10px;
+  background: var(--panel);
+}
+.pc-match-done .rn {
+  flex: 1;
+  min-width: 0;
+}
+.pc-match-done .ml {
+  font-weight: 800;
+  font-size: 12px;
+}
+.pc-match-done .mr {
+  font-size: 12px;
+  color: var(--tx2);
+  margin-top: 2px;
+}
+.pc-champ {
+  background: linear-gradient(135deg, #fff3eb, #fbe8ed);
+  border: 1px solid var(--or);
+  border-radius: 14px;
+  padding: 22px;
+  text-align: center;
+  margin-top: 8px;
+}
+.pc-champ .cl {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--am);
+  margin-bottom: 7px;
+}
+.pc-champ .cv {
+  font-size: 21px;
+  font-weight: 800;
+}
+
 @keyframes pcblink {
   50% {
     opacity: 0.2;

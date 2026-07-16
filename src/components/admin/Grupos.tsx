@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { clasificar } from '../../lib/clasificacion';
 import { ConfirmButton, Toast, useAviso } from './ui';
 
 const sb = supabase!;
@@ -12,6 +13,7 @@ interface Grupo {
   letra: string; // 'A'-'L'
   turno: number; // 1 = A-F, 2 = G-L
   estado: EstadoGrupo;
+  ganador_id: Id | null;
 }
 
 interface Partido {
@@ -48,7 +50,7 @@ export default function Grupos() {
   const cargar = useCallback(async () => {
     setErrorCarga(null);
     const [rGrupos, rPartidos, rEquipos] = await Promise.all([
-      sb.from('grupos').select('id,letra,turno,estado').order('id', { ascending: true }),
+      sb.from('grupos').select('id,letra,turno,estado,ganador_id').order('id', { ascending: true }),
       sb
         .from('partidos')
         .select('id,grupo_id,orden,equipo_a,equipo_b,vasos_a,vasos_b,ganador_id,estado')
@@ -185,9 +187,12 @@ export default function Grupos() {
     const completo = delGrupo.length === 6 && delGrupo.every((x) => x.estado === 'jugado');
     let avisoOk = 'Resultado guardado.';
     if (completo) {
+      // 1º del grupo por clasificación (PTS → DIF → VF): lo necesita la porra.
+      const equipoIds = [...new Set(delGrupo.flatMap((x) => [x.equipo_a, x.equipo_b]))];
+      const ganadorId = clasificar(equipoIds, delGrupo)[0]?.equipoId ?? null;
       const { error: eg } = await sb
         .from('grupos')
-        .update({ estado: 'completo' })
+        .update({ estado: 'completo', ganador_id: ganadorId })
         .eq('id', p.grupo_id);
       if (eg) {
         setPartidos(nuevosPartidos);
@@ -201,7 +206,10 @@ export default function Grupos() {
       }
       setGrupos(
         (prev) =>
-          prev && prev.map((g) => (g.id === p.grupo_id ? { ...g, estado: 'completo' } : g)),
+          prev &&
+          prev.map((g) =>
+            g.id === p.grupo_id ? { ...g, estado: 'completo', ganador_id: ganadorId } : g,
+          ),
       );
       avisoOk = `Grupo completo: los 6 partidos están jugados.`;
     }

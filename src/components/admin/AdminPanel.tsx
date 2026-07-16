@@ -3,6 +3,8 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import Equipos from './Equipos';
 import Grupos from './Grupos';
+import Eliminatoria from './Eliminatoria';
+import SemisFinal from './SemisFinal';
 
 const TABS = [
   { id: 'equipos', label: 'Equipos' },
@@ -153,12 +155,8 @@ function Panel({ session }: { session: Session }) {
       </div>
       {tab === 'equipos' && <Equipos />}
       {tab === 'grupos' && <Grupos />}
-      {tab === 'elim' && <Placeholder nombre="Eliminatoria" />}
-      {tab === 'semis' && <Placeholder nombre="Semis · Final" />}
+      {tab === 'elim' && <Eliminatoria />}
+      {tab === 'semis' && <SemisFinal />}
     </div>
   );
-}
-
-function Placeholder({ nombre }: { nombre: string }) {
-  return <div className="pc-note">«{nombre}» se monta en el siguiente paso.</div>;
 }
