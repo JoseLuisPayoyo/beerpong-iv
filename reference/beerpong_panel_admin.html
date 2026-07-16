@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beerpong IV · Panel de control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F2EE;--panel:#FFFFFF;--panel2:#FBF9F6;
+  --bdc:#E5DFD7;--bd2:#D8D0C5;
+  --tx:#231B16;--tx2:#786E64;--tx3:#A79C8F;
+  --or:#FF6B1E;--orD:#D4551A;
+  --li:#3F7D33;--liBg:#E7F1E0;
+  --am:#B3730E;--amBg:#FBEEDA;
+  --pk:#B23F63;
+  --mo:'Space Mono',monospace;--bdf:'Inter',system-ui,sans-serif;
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);font-family:var(--bdf);color:var(--tx)}
+.pc-wrap{max-width:480px;margin:0 auto;padding:20px 16px 50px}
+
+.pc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.pc-title{font-size:19px;font-weight:800}
+.pc-sub{font-size:12px;color:var(--tx2);margin-top:2px}
+.pc-logout{background:none;border:none;font-size:11px;color:var(--tx3);cursor:pointer;font-family:var(--bdf);text-decoration:underline}
+.pc-lockpill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mo);font-size:9.5px;letter-spacing:.5px;background:var(--liBg);color:var(--li);padding:4px 9px;border-radius:20px;margin:10px 0 18px}
+
+.pc-tabs{display:flex;gap:4px;border-bottom:1px solid var(--bdc);margin-bottom:18px}
+.pc-tab{flex:1;background:none;border:none;padding:10px 4px;font-size:13px;font-weight:700;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;font-family:var(--bdf)}
+.pc-tab.on{color:var(--tx);border-bottom-color:var(--or)}
+
+.pc-view{display:none}
+.pc-view.on{display:block}
+
+.pc-note-top{font-size:11.5px;color:var(--tx3);margin-bottom:12px;line-height:1.5}
+
+.pc-turno{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--bdc);border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.pc-turno .tt{flex:1}
+.pc-turno .tn{font-size:14px;font-weight:700}
+.pc-turno .tg{font-size:11px;color:var(--tx2);margin-top:2px}
+.pc-pill{font-family:var(--mo);font-size:10px;letter-spacing:.5px;padding:4px 9px;border-radius:20px;flex:none;white-space:nowrap}
+.pc-pill.ok{background:var(--liBg);color:var(--li)}
+.pc-pill.pend{background:var(--panel2);color:var(--tx3);border:1px solid var(--bdc)}
+.pc-pill.live{background:var(--amBg);color:var(--am)}
+
+.pc-btn{background:var(--tx);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--bdf);flex:none;white-space:nowrap}
+.pc-btn:active{transform:scale(.97)}
+.pc-btn.ghost{background:none;border:1px solid var(--bd2);color:var(--tx)}
+.pc-btn.primary{background:var(--or);color:#fff}
+
+.pc-chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none}
+.pc-chips::-webkit-scrollbar{display:none}
+.pc-chip{flex:none;min-width:40px;height:38px;border-radius:9px;border:1px solid var(--bd2);background:var(--panel);font-weight:700;font-size:14px;color:var(--tx2);cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;font-family:var(--bdf)}
+.pc-chip.on{border-color:var(--or);color:var(--orD);background:#FFF3EB}
+.pc-chip .bd{position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center;color:#fff}
+.pc-chip .bd.ok{background:var(--li)}
+.pc-chip .bd.pend{background:var(--am)}
+
+.pc-gtitle{font-size:13px;color:var(--tx2);margin-bottom:12px}
+.pc-gtitle b{color:var(--tx)}
+
+.pc-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--bdc);border-radius:10px;margin-bottom:7px;background:var(--panel)}
+.pc-row .rn{flex:1;font-size:13px;min-width:0;overflow:hidden}
+.pc-row .rn .a{font-weight:700}
+.pc-row .rn .vs{color:var(--tx3);font-size:11px;margin:0 5px}
+.pc-row .rn .b{color:var(--tx2)}
+.pc-row .rs{font-family:var(--mo);font-weight:700;font-size:13px;color:var(--tx);flex:none}
+.pc-row .win{font-size:9.5px;color:var(--li);background:var(--liBg);padding:3px 8px;border-radius:6px;flex:none;font-family:var(--mo)}
+.pc-row.pend{border-style:dashed}
+
+.pc-edit{border:2px solid var(--or);border-radius:12px;padding:13px;margin-bottom:9px;background:#FFFAF6}
+.pc-elabel{font-family:var(--mo);font-size:10px;color:var(--orD);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.pc-elabel .dot{width:6px;height:6px;border-radius:50%;background:var(--am);flex:none;animation:pcblink 1.1s infinite}
+.pc-mesa{font-family:var(--mo);font-size:9.5px;color:var(--am);background:var(--amBg);padding:2px 7px;border-radius:6px;margin-left:5px}
+.pc-erow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;margin-bottom:6px;background:var(--panel);border:1px solid var(--bdc)}
+.pc-erow.lead{background:var(--liBg);border-color:#CFE6C2}
+.pc-erow .en{flex:1;font-size:13.5px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-erow.lead .en{color:var(--li)}
+.pc-step{display:flex;align-items:center;gap:9px;flex:none}
+.pc-sb{width:30px;height:30px;border-radius:8px;border:1px solid var(--bd2);background:#fff;font-size:16px;cursor:pointer;color:var(--tx)}
+.pc-sb:active{transform:scale(.94)}
+.pc-sv{width:26px;text-align:center;font-family:var(--mo);font-size:16px;font-weight:700}
+.pc-hint{font-size:10.5px;color:var(--tx3);margin:9px 2px 11px;line-height:1.5}
+.pc-save{width:100%;height:41px;border:none;border-radius:9px;background:var(--tx);color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:var(--bdf)}
+.pc-save:active{transform:scale(.99)}
+
+.pc-note{font-size:11px;color:var(--tx3);text-align:center;padding:14px;border:1px dashed var(--bd2);border-radius:10px;margin-bottom:8px;line-height:1.5}
+
+.pc-rounds{display:flex;gap:6px;margin-bottom:18px}
+.pc-round{flex:1;text-align:center;padding:10px 4px;border-radius:9px;border:1px solid var(--bd2);font-size:11.5px;font-weight:700;color:var(--tx2);background:var(--panel)}
+.pc-round.on{border-color:var(--tx);color:var(--tx);background:var(--panel2)}
+.pc-round.lock{opacity:.5}
+
+.pc-tanda{margin-bottom:22px}
+.pc-tanda.locked{opacity:.55}
+.pc-tt-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+.pc-tt-name{font-size:12.5px;font-weight:800;letter-spacing:.5px}
+.pc-tt-sub{font-size:10.5px;color:var(--tx3);font-family:var(--mo)}
+
+.pc-live-card{background:var(--panel);border:2px solid var(--pk);border-radius:14px;padding:18px;margin-bottom:12px}
+.pc-live-badge{display:flex;align-items:center;gap:7px;font-family:var(--mo);font-size:10.5px;letter-spacing:1px;color:var(--pk);margin-bottom:15px}
+.pc-live-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--pk);animation:pcblink 1s infinite}
+@keyframes pcblink{50%{opacity:.2}}
+.pc-live-team{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;gap:10px}
+.pc-live-team+.pc-live-team{border-top:1px solid var(--bdc)}
+.pc-live-team .ln{font-size:15px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-live-team.lead .ln{color:var(--li)}
+.pc-livestep{display:flex;align-items:center;gap:9px}
+.pc-lsb{width:38px;height:38px;border-radius:10px;border:1px solid var(--bd2);background:#fff;font-size:19px;cursor:pointer}
+.pc-lsb:active{transform:scale(.94)}
+.pc-lsv{width:34px;text-align:center;font-family:var(--mo);font-size:24px;font-weight:700}
+.pc-seal{width:100%;height:45px;border:none;border-radius:10px;background:var(--pk);color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px;font-family:var(--bdf)}
+.pc-seal:disabled{background:var(--bd2);color:var(--tx3);cursor:default}
+.pc-match-done{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--bdc);border-radius:11px;margin-bottom:10px;background:var(--panel)}
+.pc-champ{background:linear-gradient(135deg,#FFF3EB,#FBE8ED);border:1px solid var(--or);border-radius:14px;padding:22px;text-align:center;margin-top:8px}
+.pc-champ .cl{font-family:var(--mo);font-size:10px;letter-spacing:2px;color:var(--am);margin-bottom:7px}
+.pc-champ .cv{font-size:21px;font-weight:800}
+</style>
+</head>
+<body>
+<div class="pc-wrap">
+
+  <div class="pc-head">
+    <div>
+      <div class="pc-title">Panel de control</div>
+      <div class="pc-sub">Beerpong IV · resultados en directo</div>
+    </div>
+    <button class="pc-logout">José Luis · Cerrar sesión</button>
+  </div>
+  <div class="pc-lockpill">🔒 ACCESO PRIVADO · SOLO ADMIN</div>
+
+  <div class="pc-tabs">
+    <button class="pc-tab on" data-t="grupos" onclick="switchTab(this)">Grupos</button>
+    <button class="pc-tab" data-t="elim" onclick="switchTab(this)">Eliminatoria</button>
+    <button class="pc-tab" data-t="semis" onclick="switchTab(this)">Semis · Final</button>
+  </div>
+
+  <!-- GRUPOS -->
+  <section class="pc-view on" id="pcv-grupos">
+    <p class="pc-note-top">Activa un turno para abrir sus 6 grupos. Dentro, entra los resultados en el orden que te dé la gana.</p>
+    <div id="pc-turnos"></div>
+    <div class="pc-chips" id="pc-group-chips"></div>
+    <div id="pc-group-body"></div>
+  </section>
+
+  <!-- ELIMINATORIA -->
+  <section class="pc-view" id="pcv-elim">
+    <p class="pc-note-top">Marca un cruce "en juego" en cuanto arranque en su mesa — eso cierra su porra al momento.</p>
+    <div class="pc-rounds">
+      <div class="pc-round on">DIECISEISAVOS</div>
+      <div class="pc-round lock" title="Se desbloquea al terminar dieciseisavos">OCTAVOS 🔒</div>
+      <div class="pc-round lock" title="Se desbloquea al terminar octavos">CUARTOS 🔒</div>
+    </div>
+    <div id="pc-elim-body"></div>
+  </section>
+
+  <!-- SEMIS / FINAL -->
+  <section class="pc-view" id="pcv-semis">
+    <p class="pc-note-top">Aquí el marcador se manda en directo: cada toque se ve al instante en la web y en la pantalla grande.</p>
+    <div id="pc-sf-body"></div>
+    <div id="pc-champ-slot"></div>
+  </section>
+
+</div>
+
+<script>
+// ---------- DATOS ----------
+var PAIRS4 = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+
+var GRUPOS = {
+  A:{teams:['Los Calvos del Barrio','Bar Manolo','Las Fieras','Los Primos'], scores:[[10,4],[10,2],[10,1],[10,6],[10,3],[10,7]]},
+  B:{teams:['Demolición','Quinto Pino','Pulpo a la Brasa','Los Cuñaos'], scores:[[10,3],[10,5],[10,2],[10,6],[10,4],[10,8]]},
+  C:{teams:['La Quinta','Dinamita','Los Tigres','Bar Pepe'], scores:[[10,4],[10,2],[10,1],[10,7],[10,3],[10,6]]},
+  D:{teams:['Peña La Resaca','El Tridente','Los Vecinos','Los Mancos'], scores:[[10,3],[10,2],[10,1],[10,5],[10,4],[10,6]]},
+  E:{teams:['Los Pívots','Bar Central','La Peña','Los Brindis'], scores:[[10,6],[10,3],[10,1],[10,8],[10,2],[10,5]]},
+  F:{teams:['La Cuadrilla','Los Suplentes','La Tropa','Bar Nuevo'], scores:[[10,4],[10,2],[10,1],[10,7],[10,3],[10,6]]},
+  G:{teams:['Los Tornillos','Bar Sol','Peña Joven','Los Serrano'], scores:[null,null,null,null,null,null]},
+  H:{teams:['Vaso Rey','Los del Cole','Peña Atómica','Bar Estrella'], scores:[null,null,null,null,null,null]},
+  I:{teams:['Los Chatarra','Bar Nuevo Sur','Peña Fuego','Los Tranquilos'], scores:[null,null,null,null,null,null]},
+  J:{teams:['Bar Central Norte','Los Currantes','Peña Luna','Los Rápidos'], scores:[null,null,null,null,null,null]},
+  K:{teams:['Los Forasteros','Bar Rincón','Peña Sombra','Los Tardones'], scores:[null,null,null,null,null,null]},
+  L:{teams:['Bar Último','Los Insaciables','Peña Relámpago','Los Constantes'], scores:[null,null,null,null,null,null]}
+};
+var TURNO_KEYS = {1:['A','B','C','D','E','F'], 2:['G','H','I','J','K','L']};
+var turnoState = {1:'completo', 2:'pendiente'};
+
+var TANDAS = [
+  {name:'Tanda 1', sub:'Mesas 1–6', matches:[
+    {a:'Los Calvos del Barrio', b:'Demolición', mesa:1, state:'jugado', sa:10, sb:6},
+    {a:'Quinto Pino', b:'Dinamita', mesa:2, state:'en_juego', sa:0, sb:0},
+    {a:'La Quinta', b:'Peña La Resaca', mesa:3, state:'pendiente'},
+    {a:'Pulpo a la Brasa', b:'Los Cuñaos', mesa:4, state:'pendiente'},
+    {a:'Bar Manolo', b:'Los Tigres', mesa:5, state:'pendiente'},
+    {a:'El Tridente', b:'Los Pívots', mesa:6, state:'pendiente'}
+  ]},
+  {name:'Tanda 2', sub:'Mesas 1–6', locked:true, note:'Se activa cuando se libere una mesa de la Tanda 1'},
+  {name:'Tanda 3', sub:'Mesas 1–4', locked:true, note:'Últimos 4 cruces de dieciseisavos'}
+];
+
+var MATCHES_SF = [
+  {label:'SEMIFINAL 1', a:'Los Calvos del Barrio', b:'Quinto Pino', state:'pendiente', sa:0, sb:0},
+  {label:'SEMIFINAL 2', a:'La Quinta', b:'Peña La Resaca', state:'locked', sa:0, sb:0},
+  {label:'FINAL', a:'?', b:'?', state:'locked', sa:0, sb:0}
+];
+
+// ---------- TABS ----------
+function switchTab(el){
+  document.querySelectorAll('.pc-tab').forEach(function(t){t.classList.remove('on')});
+  el.classList.add('on');
+  document.querySelectorAll('.pc-view').forEach(function(s){s.classList.remove('on')});
+  document.getElementById('pcv-'+el.dataset.t).classList.add('on');
+}
+
+// ---------- GRUPOS ----------
+function renderTurnos(){
+  document.getElementById('pc-turnos').innerHTML = turnoCard(1,'Grupos A–F') + turnoCard(2,'Grupos G–L');
+}
+function turnoCard(n, label){
+  var state = turnoState[n];
+  var pill = state==='completo' ? '<span class="pc-pill ok">✓ COMPLETO</span>'
+    : state==='en_curso' ? '<span class="pc-pill live">● EN CURSO</span>'
+    : '<span class="pc-pill pend">PENDIENTE</span>';
+  var btn = state==='pendiente' ? `<button class="pc-btn primary" onclick="iniciarTurno(${n})">Iniciar Turno ${n}</button>` : '';
+  return `<div class="pc-turno"><div class="tt"><div class="tn">TURNO ${n}</div><div class="tg">${label}</div></div>${pill}${btn}</div>`;
+}
+function iniciarTurno(n){
+  turnoState[n] = 'en_curso';
+  renderTurnos();
+  renderGroupChips();
+}
+function renderGroupChips(){
+  var visible = [];
+  Object.keys(turnoState).forEach(function(n){
+    if(turnoState[n]==='completo' || turnoState[n]==='en_curso'){ visible = visible.concat(TURNO_KEYS[n]); }
+  });
+  if(!window.__gsel && visible.length){ window.__gsel = visible[0]; }
+  var html = visible.map(function(k){
+    var g = GRUPOS[k];
+    var done = g.scores.filter(Boolean).length;
+    var bd = done===6 ? '<span class="bd ok">✓</span>' : (done>0 ? '<span class="bd pend"></span>' : '');
+    var isOn = (window.__gsel===k) ? ' on' : '';
+    return `<button class="pc-chip${isOn}" onclick="selectGroupChip(this,'${k}')">${k}${bd}</button>`;
+  }).join('');
+  document.getElementById('pc-group-chips').innerHTML = html;
+  if(window.__gsel){ renderGroup(window.__gsel); }
+}
+function selectGroupChip(el,k){
+  document.querySelectorAll('#pc-group-chips .pc-chip').forEach(function(c){c.classList.remove('on')});
+  el.classList.add('on');
+  window.__gsel = k;
+  renderGroup(k);
+}
+function renderGroup(key){
+  var g = GRUPOS[key];
+  var done = g.scores.filter(Boolean).length;
+  var html = `<p class="pc-gtitle">Grupo ${key} · <b>${done}/6 partidos</b></p>`;
+  PAIRS4.forEach(function(p, i){
+    var a = g.teams[p[0]], b = g.teams[p[1]];
+    var sc = g.scores[i];
+    if(sc){
+      var win = sc[0]>sc[1] ? a : b;
+      html += `<div class="pc-row" id="grow-${key}-${i}"><div class="rn"><span class="a">${a}</span><span class="vs">vs</span><span class="b">${b}</span></div><span class="rs">${sc[0]}–${sc[1]}</span><span class="win">${win}</span></div>`;
+    } else {
+      html += `<div class="pc-row pend" id="grow-${key}-${i}"><div class="rn"><span class="a">${a}</span><span class="vs">vs</span><span class="b">${b}</span></div><button class="pc-btn ghost" onclick="openGroupEdit('${key}',${i})">Meter resultado</button></div>`;
+    }
+  });
+  document.getElementById('pc-group-body').innerHTML = html;
+}
+function openGroupEdit(key, idx){
+  var g = GRUPOS[key], p = PAIRS4[idx];
+  var a = g.teams[p[0]], b = g.teams[p[1]];
+  window['tmpg_'+key+'_'+idx] = [0,0];
+  var html = `<div class="pc-edit" id="grow-${key}-${idx}">
+    <div class="pc-elabel"><span class="dot"></span>Mesa libre · introduce el resultado</div>
+    ${groupErow(key,idx,0,a)}${groupErow(key,idx,1,b)}
+    <button class="pc-save" onclick="saveGroupMatch('${key}',${idx})">Guardar resultado</button>
+  </div>`;
+  document.getElementById(`grow-${key}-${idx}`).outerHTML = html;
+}
+function groupErow(key, idx, side, name){
+  return `<div class="pc-erow" id="ger-${key}-${idx}-${side}"><span class="en">${name}</span><div class="pc-step">
+    <button class="pc-sb" onclick="stepGroup('${key}',${idx},${side},-1)">−</button>
+    <span class="pc-sv" id="gsv-${key}-${idx}-${side}">0</span>
+    <button class="pc-sb" onclick="stepGroup('${key}',${idx},${side},1)">+</button>
+  </div></div>`;
+}
+function stepGroup(key, idx, side, d){
+  var arr = window['tmpg_'+key+'_'+idx];
+  arr[side] = Math.max(0, Math.min(10, arr[side]+d));
+  document.getElementById(`gsv-${key}-${idx}-${side}`).textContent = arr[side];
+  document.getElementById(`ger-${key}-${idx}-0`).classList.toggle('lead', arr[0]>arr[1]);
+  document.getElementById(`ger-${key}-${idx}-1`).classList.toggle('lead', arr[1]>arr[0]);
+}
+function saveGroupMatch(key, idx){
+  var arr = window['tmpg_'+key+'_'+idx];
+  GRUPOS[key].scores[idx] = [arr[0], arr[1]];
+  renderGroup(key);
+  renderGroupChips();
+}
+
+// ---------- ELIMINATORIA ----------
+function renderElim(){
+  var html = '';
+  TANDAS.forEach(function(t, ti){
+    html += `<div class="pc-tanda${t.locked?' locked':''}"><div class="pc-tt-head"><span class="pc-tt-name">${t.name.toUpperCase()}</span><span class="pc-tt-sub">${t.sub}</span></div>`;
+    if(t.locked){ html += `<div class="pc-note">🔒 ${t.note}</div>`; }
+    else { t.matches.forEach(function(m, mi){ html += elimRow(ti, mi, m); }); }
+    html += `</div>`;
+  });
+  document.getElementById('pc-elim-body').innerHTML = html;
+}
+function elimRow(ti, mi, m){
+  var id = `em-${ti}-${mi}`;
+  if(m.state==='jugado'){
+    var win = m.sa>m.sb ? m.a : m.b;
+    return `<div class="pc-row" id="${id}"><div class="rn"><span class="a">${m.a}</span><span class="vs">vs</span><span class="b">${m.b}</span></div><span class="rs">${m.sa}–${m.sb}</span><span class="win">${win}</span></div>`;
+  }
+  if(m.state==='en_juego'){
+    return `<div class="pc-edit" id="${id}">
+      <div class="pc-elabel"><span class="dot"></span>EN JUEGO<span class="pc-mesa">MESA ${m.mesa}</span></div>
+      ${elimErow(ti,mi,0,m.a)}${elimErow(ti,mi,1,m.b)}
+      <p class="pc-hint">Al marcar en juego se cerró la porra de este cruce.</p>
+      <button class="pc-save" onclick="saveElim(${ti},${mi})">Guardar resultado</button>
+    </div>`;
+  }
+  return `<div class="pc-row pend" id="${id}"><div class="rn"><span class="a">${m.a}</span><span class="vs">vs</span><span class="b">${m.b}</span></div><button class="pc-btn ghost" onclick="marcarEnJuego(${ti},${mi})">Marcar en juego</button></div>`;
+}
+function elimErow(ti,mi,side,name){
+  return `<div class="pc-erow" id="eer-${ti}-${mi}-${side}"><span class="en">${name}</span><div class="pc-step">
+    <button class="pc-sb" onclick="stepElim(${ti},${mi},${side},-1)">−</button>
+    <span class="pc-sv" id="esv-${ti}-${mi}-${side}">0</span>
+    <button class="pc-sb" onclick="stepElim(${ti},${mi},${side},1)">+</button>
+  </div></div>`;
+}
+function marcarEnJuego(ti, mi){
+  var m = TANDAS[ti].matches[mi];
+  m.state = 'en_juego'; m.sa = 0; m.sb = 0;
+  renderElim();
+}
+function stepElim(ti, mi, side, d){
+  var m = TANDAS[ti].matches[mi];
+  if(side===0){ m.sa = Math.max(0, Math.min(10, m.sa+d)); } else { m.sb = Math.max(0, Math.min(10, m.sb+d)); }
+  document.getElementById(`esv-${ti}-${mi}-0`).textContent = m.sa;
+  document.getElementById(`esv-${ti}-${mi}-1`).textContent = m.sb;
+  document.getElementById(`eer-${ti}-${mi}-0`).classList.toggle('lead', m.sa>m.sb);
+  document.getElementById(`eer-${ti}-${mi}-1`).classList.toggle('lead', m.sb>m.sa);
+}
+function saveElim(ti, mi){
+  TANDAS[ti].matches[mi].state = 'jugado';
+  renderElim();
+}
+
+// ---------- SEMIS / FINAL ----------
+function renderSF(){
+  var html = '';
+  MATCHES_SF.forEach(function(m, i){
+    if(m.state==='jugado'){
+      var win = m.sa>m.sb ? m.a : m.b;
+      html += `<div class="pc-match-done"><div class="rn" style="flex:1"><span class="a">${m.label}</span><br><span style="font-size:12px;color:var(--tx2)">${m.a} ${m.sa} – ${m.sb} ${m.b}</span></div><span class="win">${win}</span></div>`;
+    } else if(m.state==='live'){
+      html += liveCard(i, m);
+    } else if(m.state==='pendiente'){
+      html += `<div class="pc-row"><div class="rn"><span class="a">${m.label}</span><span class="vs">·</span><span class="b">${m.a} vs ${m.b}</span></div><button class="pc-btn primary" onclick="iniciarDirecto(${i})">Iniciar en directo</button></div>`;
+    } else {
+      html += `<div class="pc-note">🔒 ${m.label} · se desbloquea al terminar el partido anterior</div>`;
+    }
+  });
+  document.getElementById('pc-sf-body').innerHTML = html;
+  var final = MATCHES_SF[2], champHtml = '';
+  if(final.state==='jugado'){
+    var champ = final.sa>final.sb ? final.a : final.b;
+    champHtml = `<div class="pc-champ"><div class="cl">CAMPEÓN BEERPONG IV</div><div class="cv">🏆 ${champ}</div></div>`;
+  }
+  document.getElementById('pc-champ-slot').innerHTML = champHtml;
+}
+function liveCard(i, m){
+  return `<div class="pc-live-card">
+    <div class="pc-live-badge"><span class="dot"></span>EN DIRECTO · ${m.label}</div>
+    ${liveTeam(i,0,m.a,m.sa,m.sb)}${liveTeam(i,1,m.b,m.sb,m.sa)}
+    <button class="pc-seal" id="seal-${i}" onclick="sellarSF(${i})" ${(m.sa<10 && m.sb<10) ? 'disabled' : ''}>Sellar resultado</button>
+  </div>`;
+}
+function liveTeam(i, side, name, my, other){
+  return `<div class="pc-live-team${my>other?' lead':''}" id="lt-${i}-${side}"><span class="ln">${name}</span><div class="pc-livestep">
+    <button class="pc-lsb" onclick="stepSF(${i},${side},-1)">−</button>
+    <span class="pc-lsv" id="lsv-${i}-${side}">${my}</span>
+    <button class="pc-lsb" onclick="stepSF(${i},${side},1)">+</button>
+  </div></div>`;
+}
+function iniciarDirecto(i){ MATCHES_SF[i].state = 'live'; renderSF(); }
+function stepSF(i, side, d){
+  var m = MATCHES_SF[i];
+  if(side===0){ m.sa = Math.max(0, Math.min(10, m.sa+d)); } else { m.sb = Math.max(0, Math.min(10, m.sb+d)); }
+  document.getElementById(`lsv-${i}-0`).textContent = m.sa;
+  document.getElementById(`lsv-${i}-1`).textContent = m.sb;
+  document.getElementById(`lt-${i}-0`).classList.toggle('lead', m.sa>m.sb);
+  document.getElementById(`lt-${i}-1`).classList.toggle('lead', m.sb>m.sa);
+  var seal = document.getElementById(`seal-${i}`);
+  if(seal) seal.disabled = !(m.sa>=10 || m.sb>=10);
+}
+function afterSealSF(){
+  if(MATCHES_SF[0].state==='jugado' && MATCHES_SF[1].state==='jugado' && MATCHES_SF[2].state==='locked'){
+    var w1 = MATCHES_SF[0].sa>MATCHES_SF[0].sb ? MATCHES_SF[0].a : MATCHES_SF[0].b;
+    var w2 = MATCHES_SF[1].sa>MATCHES_SF[1].sb ? MATCHES_SF[1].a : MATCHES_SF[1].b;
+    MATCHES_SF[2].state = 'pendiente'; MATCHES_SF[2].a = w1; MATCHES_SF[2].b = w2;
+  }
+}
+function sellarSF(i){ MATCHES_SF[i].state = 'jugado'; afterSealSF(); renderSF(); }
+
+// ---------- INIT ----------
+renderTurnos(); renderGroupChips(); renderElim(); renderSF();
+</script>
+</body>
+</html>

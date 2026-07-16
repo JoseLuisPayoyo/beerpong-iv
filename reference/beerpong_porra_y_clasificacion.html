@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beerpong IV · Porra y Clasificación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a1110;--bg2:#241815;--bg3:#2f211c;
+  --or:#FF6B1E;--pk:#D4537E;--cr:#FFF6EC;--li:#97C459;--am:#EF9F27;
+  --ln:rgba(255,246,236,.12);--mu:rgba(255,246,236,.5);--mu2:rgba(255,246,236,.72);
+  --dp:'Anton','Impact',sans-serif;--mo:'Space Mono','Courier New',monospace;--bd:'Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--bd);color:var(--cr);
+  background:
+    radial-gradient(120% 55% at 50% -8%, rgba(255,107,30,.13), transparent 60%),
+    radial-gradient(130% 75% at 50% 112%, rgba(212,83,126,.16), transparent 55%),
+    var(--bg);
+  background-attachment:fixed;
+  display:flex;justify-content:center;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.app{
+  width:100%;max-width:432px;min-height:100vh;position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  background:linear-gradient(180deg, rgba(26,17,16,.4), rgba(26,17,16,.75));
+  box-shadow:0 0 60px rgba(0,0,0,.4);
+}
+/* header */
+.hd{padding:16px 18px 0;flex:none}
+.hd-top{display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--dp);font-size:20px;letter-spacing:.5px;color:var(--cr);line-height:1}
+.logo b{color:var(--or);font-weight:400}
+.pts{font-family:var(--mo);font-size:15px;font-weight:700;color:var(--li);text-align:right;line-height:1}
+.pts span{display:block;font-size:8px;font-weight:400;letter-spacing:1.5px;color:var(--mu);margin-bottom:2px}
+.prog{height:3px;border-radius:2px;background:var(--bg3);margin:12px 0 14px;overflow:hidden}
+.prog i{display:block;height:100%;width:39%;background:linear-gradient(90deg,var(--or),var(--pk));border-radius:2px}
+/* content */
+.main{flex:1;overflow-y:auto;padding:0 18px 22px;-webkit-overflow-scrolling:touch}
+.main::-webkit-scrollbar{width:0}
+.view{display:none;animation:fade .3s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* section head */
+.sh{font-family:var(--dp);font-size:30px;line-height:.95;letter-spacing:.5px;color:var(--cr);margin:2px 0 0}
+.sh i{color:var(--or);font-style:normal}
+.sh.li i{color:var(--li)}
+.led{font-family:var(--mo);font-size:10px;letter-spacing:1.5px;display:flex;align-items:center;gap:7px;margin:10px 0 16px;color:var(--li)}
+.led.am{color:var(--am)}
+.led .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.blink .dot{animation:bl 1.1s infinite}
+@keyframes bl{50%{opacity:.25}}
+/* phase / group chips */
+.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 4px;margin-bottom:14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--ln);border-radius:10px;background:var(--bg2);padding:8px 12px 7px;cursor:pointer;text-align:center;min-width:60px;transition:border-color .2s,background .2s}
+.chip .cn{font-family:var(--dp);font-size:14px;letter-spacing:.5px;color:var(--mu);line-height:1}
+.chip .cs{display:block;font-family:var(--mo);font-size:7.5px;letter-spacing:1px;color:var(--mu);margin-top:3px}
+.chip.on{border-color:var(--li);background:rgba(151,196,89,.13)}
+.chip.on .cn,.chip.on .cs{color:var(--li)}
+.chip.done .cs{color:var(--li)}
+.chip.lock{opacity:.45}
+.chip .lk{width:9px;height:9px;vertical-align:-1px;margin-right:3px}
+.gchip{flex:none;width:44px;height:40px;border-radius:10px;border:1px solid var(--ln);background:var(--bg2);font-family:var(--dp);font-size:17px;color:var(--mu);cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:border-color .2s,background .2s}
+.gchip.on{border-color:var(--or);background:rgba(255,107,30,.15);color:var(--or)}
+.gchip .bd{position:absolute;top:-4px;right:-4px;width:13px;height:13px;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center}
+.gchip .bd.ok{background:var(--li);color:#1a1110}
+.gchip .bd.pl{background:var(--am);animation:bl 1.1s infinite}
+/* porra matches */
+.match{background:var(--bg2);border:1px solid var(--ln);border-radius:13px;padding:11px;margin-bottom:11px}
+.match-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.mtag{font-family:var(--mo);font-size:9px;letter-spacing:1px;color:var(--mu)}
+.mpts{font-family:var(--mo);font-size:11px;font-weight:700;color:var(--or)}
+.team{display:flex;align-items:center;gap:10px;width:100%;background:var(--bg3);border:1.5px solid transparent;border-radius:10px;padding:11px 12px;cursor:pointer;text-align:left;transition:border-color .18s,background .18s}
+.team+.team{margin-top:7px}
+.team .rd{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--mu);flex:none;transition:.18s}
+.team .tn{font-family:var(--bd);font-size:13.5px;font-weight:500;color:var(--cr)}
+.team.sel{border-color:var(--or);background:rgba(255,107,30,.15)}
+.team.sel .rd{border-color:var(--or);background:var(--or);box-shadow:inset 0 0 0 3px var(--bg3)}
+.more{font-family:var(--mo);font-size:10px;letter-spacing:1px;color:var(--mu);text-align:center;padding:8px;border:1px dashed var(--ln);border-radius:10px}
+.cta{width:100%;height:48px;background:var(--or);border:none;border-radius:12px;color:#1a1110;font-family:var(--dp);font-size:17px;letter-spacing:1px;cursor:pointer;margin-top:6px;transition:transform .1s}
+.cta:active{transform:scale(.98)}
+.cta:disabled{background:var(--bg3);color:var(--mu);cursor:default}
+/* leaderboard */
+.prize{background:linear-gradient(135deg,rgba(255,107,30,.14),rgba(212,83,126,.12));border:1px solid rgba(255,107,30,.3);border-radius:12px;padding:11px 13px;margin-bottom:14px}
+.prize .pl{font-family:var(--mo);font-size:8.5px;letter-spacing:1.5px;color:var(--am);margin-bottom:3px}
+.prize .pt{font-family:var(--bd);font-size:12.5px;color:var(--mu2);line-height:1.4}
+.prize .pt b{color:var(--cr);font-weight:600}
+.rk{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:12px;background:var(--bg2);border:1px solid var(--ln);margin-bottom:7px}
+.rk .rp{font-family:var(--dp);font-size:18px;color:var(--mu);width:26px;text-align:center;flex:none}
+.rk .rn{font-family:var(--bd);font-size:14px;font-weight:500;color:var(--cr);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk .rs{font-family:var(--mo);font-size:15px;font-weight:700;color:var(--cr);flex:none}
+.rk .rs em{font-style:normal;font-size:9px;color:var(--mu);font-weight:400}
+.rk.r1{border-color:rgba(255,107,30,.4)}.rk.r1 .rp{color:var(--or)}
+.rk.r2 .rp{color:var(--cr)}.rk.r3 .rp{color:var(--am)}
+.rk.me{border-color:var(--or);background:rgba(255,107,30,.14)}
+.rk.me .rn,.rk.me .rs{color:var(--or)}
+.tag{font-family:var(--mo);font-size:8px;background:var(--or);color:#1a1110;padding:2px 6px;border-radius:4px;letter-spacing:1px;margin-left:8px;vertical-align:1px}
+/* groups table */
+.gname{font-family:var(--dp);font-size:23px;color:var(--cr);letter-spacing:.5px;margin-bottom:3px}
+.gstat{font-family:var(--mo);font-size:9.5px;letter-spacing:1px;color:var(--mu);margin-bottom:13px}
+.thead{display:flex;font-family:var(--mo);font-size:8.5px;letter-spacing:.5px;color:var(--mu);padding:0 11px 8px;border-bottom:1px solid var(--ln)}
+.trow{display:flex;align-items:center;padding:12px 11px;border-bottom:1px solid var(--ln)}
+.trow .p{width:22px;font-family:var(--dp);font-size:16px;color:var(--mu);flex:none}
+.trow .nm{flex:1;min-width:0;padding-right:6px}
+.trow .nn{font-family:var(--bd);font-size:13.5px;font-weight:600;color:var(--cr);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .ns{font-family:var(--mo);font-size:8px;letter-spacing:1px;margin-top:2px;color:var(--mu)}
+.trow .st{width:24px;text-align:center;font-family:var(--mo);font-size:11px;color:var(--mu2);flex:none}
+.trow .df{width:34px;text-align:center;font-family:var(--mo);font-size:11px;color:var(--mu2);flex:none}
+.trow .pt{width:28px;text-align:right;font-family:var(--mo);font-weight:700;font-size:13px;color:var(--cr);flex:none}
+.trow.q .p{color:var(--li)}.trow.q .nn{color:var(--li)}.trow.q .ns{color:var(--li)}.trow.q .pt{color:var(--li)}
+.trow.pv .p{color:var(--am)}.trow.pv .nn{color:var(--am)}.trow.pv .ns{color:var(--am)}
+.trow.out{opacity:.5}.trow.out .nn{color:var(--pk)}
+.cut{display:flex;align-items:center;gap:8px;font-family:var(--mo);font-size:8px;letter-spacing:1.5px;color:var(--or);margin:0}
+.cut .l{flex:1;height:0;border-top:1px dashed var(--or);opacity:.6}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;font-family:var(--mo);font-size:9px;letter-spacing:.5px;color:var(--mu)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend .d{width:8px;height:8px;border-radius:50%;flex:none}
+/* bracket */
+.rnd{font-family:var(--mo);font-size:10px;letter-spacing:2.5px;color:var(--or);margin:20px 0 10px;display:flex;align-items:center;gap:9px}
+.rnd:first-child{margin-top:2px}
+.rnd .l{flex:1;height:0;border-top:1px solid var(--ln)}
+.rnd .ck{color:var(--li);font-size:11px}
+.bm{background:var(--bg2);border:1px solid var(--ln);border-radius:11px;padding:8px 12px;margin-bottom:8px}
+.bm.now{border-color:var(--am);box-shadow:0 0 0 1px rgba(239,159,39,.25)}
+.bnow{font-family:var(--mo);font-size:8px;letter-spacing:1px;color:var(--am);display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.bnow .dot{width:5px;height:5px;border-radius:50%;background:var(--am);animation:bl 1.1s infinite}
+.bl{display:flex;align-items:center;justify-content:space-between;padding:5px 0}
+.bl+.bl{border-top:1px solid var(--ln)}
+.bl .bn{font-family:var(--bd);font-size:13px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:8px}
+.bl .bs{font-family:var(--mo);font-weight:700;font-size:13px;color:var(--mu);flex:none}
+.bl.w .bn{color:var(--or)}.bl.w .bs{color:var(--or)}
+.bl.live .bn{color:var(--cr)}.bl.live .bs{color:var(--cr)}
+.champ{background:linear-gradient(135deg,rgba(255,107,30,.15),rgba(212,83,126,.12));border:1px solid var(--or);border-radius:13px;padding:16px;text-align:center;margin-top:9px}
+.champ .ct{font-family:var(--mo);font-size:9px;letter-spacing:2.5px;color:var(--am);margin-bottom:5px}
+.champ .cv{font-family:var(--dp);font-size:22px;color:var(--cr);letter-spacing:1px}
+.bpend{font-family:var(--mo);font-size:11px;color:var(--mu);text-align:center;padding:8px 0}
+/* bottom nav */
+.nav{flex:none;display:flex;background:rgba(20,13,12,.92);border-top:1px solid var(--ln);backdrop-filter:blur(8px)}
+.nav button{flex:1;background:none;border:none;color:var(--mu);display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 0 13px;cursor:pointer;font-family:var(--mo);font-size:8.5px;letter-spacing:.5px;transition:color .2s}
+.nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6}
+.nav button.on{color:var(--or)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hd">
+    <div class="hd-top">
+      <div class="logo">BEERPONG<b> IV</b></div>
+      <div class="pts"><span>TUS PUNTOS</span><span id="hd-pts" style="font-size:15px;color:var(--li)">62</span></div>
+    </div>
+    <div class="prog"><i></i></div>
+  </div>
+
+  <div class="main" id="main">
+
+    <!-- PORRA -->
+    <section class="view on" id="v-porra">
+      <div class="sh li">LA <i>PORRA</i></div>
+      <div class="chips" id="phase-chips">
+        <div class="chip done"><div class="cn">GRUPOS</div><span class="cs">✓ CERRADA</span></div>
+        <div class="chip on"><div class="cn">16avos</div><span class="cs">● ABIERTA</span></div>
+        <div class="chip lock"><div class="cn">8vos</div><span class="cs">BLOQUEADA</span></div>
+        <div class="chip lock"><div class="cn">4tos</div><span class="cs">BLOQUEADA</span></div>
+        <div class="chip lock"><div class="cn">SEMIS</div><span class="cs">BLOQUEADA</span></div>
+        <div class="chip lock"><div class="cn">FINAL</div><span class="cs">BLOQUEADA</span></div>
+      </div>
+      <div class="led blink"><span class="dot"></span>ABIERTA · CIERRA AL EMPEZAR DIECISEISAVOS</div>
+      <div id="porra-matches"></div>
+      <div class="more" style="margin:0 0 12px">+ 11 CRUCES MÁS AL HACER SCROLL</div>
+      <button class="cta" id="porra-cta" disabled>Elige tus ganadores</button>
+    </section>
+
+    <!-- RANKING PORRA -->
+    <section class="view" id="v-ranking">
+      <div class="sh">EL <i>PROFETA</i></div>
+      <div class="led blink" style="margin-bottom:14px"><span class="dot"></span>EN VIVO · SE ACTUALIZA SOLO</div>
+      <div class="prize">
+        <div class="pl">PREMIO DEL PROFETA</div>
+        <div class="pt">El nº1 se lleva <b>bonocopas toda la noche</b> + su nombre en la Pantalla Grande + plaza guardada para la V.</div>
+      </div>
+      <div id="ranking-list"></div>
+    </section>
+
+    <!-- GRUPOS -->
+    <section class="view" id="v-grupos">
+      <div class="sh li">EN <i>DIRECTO</i></div>
+      <div class="led blink am" style="margin-bottom:14px"><span class="dot"></span>PROVISIONAL · 2 GRUPOS EN JUEGO</div>
+      <div class="chips" id="group-chips"></div>
+      <div class="gname" id="g-name">GRUPO A</div>
+      <div class="gstat" id="g-stat">COMPLETADO · 6/6 PARTIDOS</div>
+      <div class="thead"><span style="width:22px">#</span><span style="flex:1">EQUIPO</span><span style="width:24px;text-align:center">PJ</span><span style="width:34px;text-align:center">DIF</span><span style="width:28px;text-align:right">PTS</span></div>
+      <div id="g-body"></div>
+      <div class="legend">
+        <span><i class="d" style="background:var(--li)"></i>Pasa (1º y 2º)</span>
+        <span><i class="d" style="background:var(--am)"></i>Mejor 3º · en la pelea</span>
+        <span><i class="d" style="background:var(--pk)"></i>Fuera</span>
+      </div>
+    </section>
+
+    <!-- CUADRO -->
+    <section class="view" id="v-cuadro">
+      <div class="sh">EL <i>CUADRO</i></div>
+      <div class="led blink am" style="margin-bottom:6px"><span class="dot"></span>EN JUEGO · 21:14</div>
+      <div style="font-family:var(--mo);font-size:9px;letter-spacing:1px;color:var(--mu);margin-bottom:4px">32 EQUIPOS · DIECISEISAVOS Y OCTAVOS COMPLETADOS</div>
+
+      <div class="rnd">CUARTOS<span class="l"></span></div>
+      <div class="bm"><div class="bl w"><span class="bn">Los Calvos del Barrio</span><span class="bs">10</span></div><div class="bl"><span class="bn">Demolición</span><span class="bs">6</span></div></div>
+      <div class="bm now"><div class="bnow"><span class="dot"></span>EN JUEGO · MESA 1</div><div class="bl live" id="q2a"><span class="bn">Quinto Pino</span><span class="bs" id="q2as">7</span></div><div class="bl live" id="q2b"><span class="bn">Dinamita</span><span class="bs" id="q2bs">5</span></div></div>
+      <div class="bm"><div class="bl"><span class="bn">La Quinta</span><span class="bs">—</span></div><div class="bl"><span class="bn">Peña La Resaca</span><span class="bs">—</span></div></div>
+      <div class="bm"><div class="bl"><span class="bn">Pulpo a la Brasa</span><span class="bs">—</span></div><div class="bl"><span class="bn">Los Cuñaos</span><span class="bs">—</span></div></div>
+
+      <div class="rnd">SEMIFINALES<span class="l"></span></div>
+      <div class="bm"><div class="bl"><span class="bn">Los Calvos del Barrio</span><span class="bs">—</span></div><div class="bl"><span class="bn" style="font-style:italic;color:var(--mu)">Ganador C2</span><span class="bs">—</span></div></div>
+      <div class="bm"><div class="bl"><span class="bn" style="font-style:italic;color:var(--mu)">Ganador C3</span><span class="bs">—</span></div><div class="bl"><span class="bn" style="font-style:italic;color:var(--mu)">Ganador C4</span><span class="bs">—</span></div></div>
+
+      <div class="rnd">FINAL<span class="l"></span></div>
+      <div class="bpend">Por determinar</div>
+      <div class="champ"><div class="ct">CAMPEÓN BEERPONG IV</div><div class="cv">¿ ? ? ?</div></div>
+    </section>
+
+  </div>
+
+  <nav class="nav" id="nav">
+    <button class="on" data-v="porra"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>Porra</button>
+    <button data-v="ranking"><svg viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/><path d="M12 13v3M9 20h6M10 16h4"/></svg>Ranking</button>
+    <button data-v="grupos"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="3.5" rx="1"/><rect x="4" y="10.2" width="16" height="3.5" rx="1"/><rect x="4" y="15.5" width="16" height="3.5" rx="1"/></svg>Grupos</button>
+    <button data-v="cuadro"><svg viewBox="0 0 24 24"><path d="M5 5v4h6M5 15v4h6M11 7h4v10h-4M15 12h4"/></svg>Cuadro</button>
+  </nav>
+
+</div>
+
+<script>
+(function(){
+  var LOCK='<svg class="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+
+  // --- PORRA MATCHES ---
+  var MATCHES=[
+    ['Los Calvos del Barrio','Bar Pepe'],
+    ['Demolición','Los Suplentes'],
+    ['Quinto Pino','Los Tigres'],
+    ['Dinamita','La Cuadrilla'],
+    ['La Quinta','Los Primos']
+  ];
+  var picks={};
+  function renderMatches(){
+    var h='';
+    MATCHES.forEach(function(m,i){
+      h+='<div class="match"><div class="match-top"><span class="mtag">DIECISEISAVOS · '+(i+1)+'/16</span><span class="mpts">+5 PTS</span></div>'
+        +'<button class="team'+(picks[i]===0?' sel':'')+'" data-m="'+i+'" data-s="0"><span class="rd"></span><span class="tn">'+m[0]+'</span></button>'
+        +'<button class="team'+(picks[i]===1?' sel':'')+'" data-m="'+i+'" data-s="1"><span class="rd"></span><span class="tn">'+m[1]+'</span></button></div>';
+    });
+    document.getElementById('porra-matches').innerHTML=h;
+  }
+  function updateCta(){
+    var n=Object.keys(picks).length,cta=document.getElementById('porra-cta');
+    if(n===0){cta.disabled=true;cta.textContent='Elige tus ganadores';}
+    else{cta.disabled=false;cta.textContent='Confirmar apuesta ('+n+'/16)';}
+  }
+  document.getElementById('porra-matches').addEventListener('click',function(e){
+    var b=e.target.closest('.team'); if(!b)return;
+    var m=+b.dataset.m,s=+b.dataset.s; picks[m]=s; renderMatches(); updateCta();
+  });
+
+  // --- RANKING ---
+  var RANK=[
+    ['Quique_23',84],['María Heredia',81],['El Cani',79],['Peña La Resaca',73],
+    ['Antonio M.',68],['Lucía_99',65],['José Luis P.',62,true],['Bar Pepe',59],
+    ['Los Vecinos',54],['Rocío G.',51]
+  ];
+  (function(){
+    var h='';
+    RANK.forEach(function(r,i){
+      var cls='rk'+(i<3?' r'+(i+1):'')+(r[2]?' me':'');
+      h+='<div class="'+cls+'"><span class="rp">'+(i+1)+'</span><span class="rn">'+r[0]+(r[2]?'<span class="tag">TÚ</span>':'')+'</span><span class="rs">'+r[1]+'<em> pts</em></span></div>';
+    });
+    document.getElementById('ranking-list').innerHTML=h;
+  })();
+
+  // --- GROUPS ---
+  var G={
+    A:{s:'COMPLETADO · 6/6 PARTIDOS',r:[['Los Calvos del Barrio',3,'+12',9,'q'],['Bar Manolo',3,'+4',6,'q'],['Las Fieras',3,'-3',3,'pv'],['Los Primos',3,'-13',0,'out']]},
+    B:{s:'COMPLETADO · 6/6 PARTIDOS',r:[['Demolición',3,'+9',9,'q'],['Quinto Pino',3,'+1',6,'q'],['Pulpo a la Brasa',3,'-2',3,'out'],['Los Cuñaos',3,'-8',0,'out']]},
+    C:{s:'COMPLETADO · 6/6 PARTIDOS',r:[['La Quinta',3,'+10',9,'q'],['Dinamita',3,'+3',6,'q'],['Los Tigres',3,'+2',3,'pv'],['Bar Pepe',3,'-9',0,'out']]},
+    D:{s:'COMPLETADO · 6/6 PARTIDOS',r:[['Peña La Resaca',3,'+7',9,'q'],['El Tridente',3,'+2',6,'q'],['Los Vecinos',3,'-4',3,'out'],['Los Mancos',3,'-5',0,'out']]},
+    E:{s:'EN JUEGO · 4/6 PARTIDOS',r:[['Los Pívots',2,'+6',6,'q'],['Bar Central',2,'+1',3,'q'],['La Peña',2,'-2',3,'pv'],['Los Brindis',2,'-5',0,'out']]},
+    F:{s:'EN JUEGO · 3/6 PARTIDOS',r:[['La Cuadrilla',2,'+4',6,'q'],['Los Suplentes',1,'0',3,'q'],['La Tropa',1,'-1',3,'pv'],['Bar Nuevo',1,'-3',0,'out']]},
+    G:{s:'TURNO 2 · POR JUGAR',r:[['Equipo 25',0,'0',0,'q'],['Equipo 26',0,'0',0,'q'],['Equipo 27',0,'0',0,'pv'],['Equipo 28',0,'0',0,'out']]},
+    H:{s:'TURNO 2 · POR JUGAR',r:[['Equipo 29',0,'0',0,'q'],['Equipo 30',0,'0',0,'q'],['Equipo 31',0,'0',0,'pv'],['Equipo 32',0,'0',0,'out']]}
+  };
+  var order=['A','B','C','D','E','F','G','H'];
+  var gstate={A:'ok',B:'ok',C:'ok',D:'ok',E:'pl',F:'pl'};
+  (function(){
+    var h='';
+    order.forEach(function(k,i){
+      var bd=gstate[k]==='ok'?'<span class="bd ok">✓</span>':(gstate[k]==='pl'?'<span class="bd pl"></span>':'');
+      h+='<button class="gchip'+(i===0?' on':'')+'" data-g="'+k+'">'+k+bd+'</button>';
+    });
+    document.getElementById('group-chips').innerHTML=h;
+  })();
+  function renderGroup(k){
+    var d=G[k];
+    document.getElementById('g-name').textContent='GRUPO '+k;
+    document.getElementById('g-stat').textContent=d.s;
+    var h='';
+    d.r.forEach(function(r,i){
+      var lbl=r[4]==='q'?(i===0?'1º · PASA':'2º · PASA'):(r[4]==='pv'?'3º · EN LA PELEA':'4º · FUERA');
+      h+='<div class="trow '+r[4]+'"><span class="p">'+(i+1)+'</span>'
+        +'<span class="nm"><div class="nn">'+r[0]+'</div><div class="ns">'+lbl+'</div></span>'
+        +'<span class="st">'+r[1]+'</span><span class="df">'+r[2]+'</span><span class="pt">'+r[3]+'</span></div>';
+      if(i===1)h+='<div class="cut" style="padding:9px 11px"><span class="l"></span>LÍNEA DE CLASIFICACIÓN<span class="l"></span></div>';
+    });
+    document.getElementById('g-body').innerHTML=h;
+  }
+  document.getElementById('group-chips').addEventListener('click',function(e){
+    var b=e.target.closest('.gchip'); if(!b)return;
+    this.querySelectorAll('.gchip').forEach(function(c){c.classList.remove('on')});
+    b.classList.add('on'); renderGroup(b.dataset.g);
+  });
+
+  // --- NAV ---
+  document.getElementById('nav').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b)return;
+    this.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
+    document.getElementById('v-'+b.dataset.v).classList.add('on');
+    document.getElementById('main').scrollTop=0;
+  });
+
+  // --- LIVE score tick on the bracket ---
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduce){
+    var a=7,b=5;
+    setInterval(function(){
+      if(a>=10||b>=10)return;
+      if(Math.random()>0.5&&a<10)a++; else if(b<10)b++;
+      document.getElementById('q2as').textContent=a;
+      document.getElementById('q2bs').textContent=b;
+      if(a>=10){document.getElementById('q2a').classList.add('w');}
+      if(b>=10){document.getElementById('q2b').classList.add('w');}
+    },2600);
+  }
+
+  renderMatches(); updateCta(); renderGroup('A');
+})();
+</script>
+</body>
+</html>
