@@ -60,3 +60,29 @@ create table if not exists public.fases (
   porra_abierta boolean not null default false,
   puntos        integer
 );
+
+-- ---------------------------------------------------------------------------
+-- participantes / apuestas: la porra pública. Ambas con RLS SIN políticas:
+-- el navegador NO puede tocarlas; todo pasa por /api/porra/* con la
+-- SUPABASE_SECRET_KEY. pin_hash es bcrypt (el PIN nunca se guarda en claro).
+create table if not exists public.participantes (
+  id        uuid primary key default gen_random_uuid(),
+  mote      text not null,
+  pin_hash  text not null,
+  creado_en timestamptz not null default now()
+);
+create unique index if not exists participantes_mote_unico
+  on public.participantes (lower(trim(mote)));
+
+create table if not exists public.apuestas (
+  id              uuid primary key default gen_random_uuid(),
+  participante_id uuid not null references public.participantes(id),
+  fase            text not null references public.fases(nombre),
+  partido_id      uuid references public.partidos(id),
+  grupo_id        smallint references public.grupos(id),
+  pick_equipo_id  uuid not null references public.equipos(id),
+  creada_en       timestamptz not null default now(),
+  check ((partido_id is null) <> (grupo_id is null)),  -- XOR: cruce o grupo
+  unique (participante_id, partido_id),
+  unique (participante_id, grupo_id)
+);

@@ -41,3 +41,28 @@ export interface EquipoPub {
   grupo_id: number | null;
   pos_grupo: number | null;
 }
+
+// Nombres de fase de la porra (fases.nombre). Ojo: la fase de porra 'grupos'
+// corresponde a partidos.fase = 'grupo' (singular).
+export type FasePorra =
+  | 'grupos'
+  | 'dieciseisavos'
+  | 'octavos'
+  | 'cuartos'
+  | 'semifinal'
+  | 'final';
+
+export interface FaseRow {
+  nombre: string;
+  orden: number;
+  porra_abierta: boolean;
+  puntos: number | null;
+}
+
+// Apuesta tal como la devuelve /api/porra/mis-picks.
+export interface PickGuardado {
+  fase: string;
+  grupo_id: number | null;
+  partido_id: Id | null;
+  pick_equipo_id: Id;
+}

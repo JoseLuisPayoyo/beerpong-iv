@@ -47,18 +47,20 @@ export default function VistaGrupos({
 
   const sellado = grupos.length === 12 && grupos.every((g) => g.estado === 'completo');
 
-  // Mejores 8 terceros: sobre los grupos que YA tienen algún partido jugado
-  // (mismo criterio que el admin: PTS → DIF → VF). Set de grupo_id que clasifican.
+  // Mejores 8 terceros: SOLO entre grupos completos (mismo criterio que el
+  // admin: PTS → DIF → VF). Un 3º de grupo sin completar no es un 3º real
+  // todavía; y quedar 9º+ entre completos ya es definitivo, porque los grupos
+  // que faltan solo pueden empujarte hacia abajo. Set de grupo_id que clasifican.
   const mejoresTerceros = useMemo(() => {
     const pool: { gid: number; st: Standing }[] = [];
     for (const g of grupos) {
-      if ((jugadosPorGrupo.get(g.id) ?? 0) === 0) continue;
+      if (g.estado !== 'completo') continue;
       const tercero = standings.get(g.id)?.[2];
       if (tercero) pool.push({ gid: g.id, st: tercero });
     }
     pool.sort((a, b) => compararStandings(a.st, b.st));
     return new Set(pool.slice(0, 8).map((t) => t.gid));
-  }, [grupos, standings, jugadosPorGrupo]);
+  }, [grupos, standings]);
 
   const gruposOrden = useMemo(() => [...grupos].sort((a, b) => a.id - b.id), [grupos]);
   const activo =
@@ -117,7 +119,7 @@ export default function VistaGrupos({
           </div>
           <div>
             {(standings.get(activo.id) ?? []).map((row, i) => {
-              const { cls, label } = filaEstado(i, activo.id, mejoresTerceros, sellado);
+              const { cls, label } = filaEstado(i, activo, mejoresTerceros, sellado);
               return (
                 <div key={String(row.equipoId)}>
                   <div className={`trow ${cls}`}>
@@ -175,19 +177,21 @@ function fmtDif(dif: number): string {
 // Clase de fila + etiqueta según posición y criterio de mejores terceros.
 function filaEstado(
   i: number,
-  gid: number,
+  g: Grupo,
   mejoresTerceros: Set<number>,
   sellado: boolean,
 ): { cls: string; label: string } {
   if (i === 0) return { cls: 'q', label: '1º · PASA' };
   if (i === 1) return { cls: 'q', label: '2º · PASA' };
   if (i === 2) {
-    const clasifica = mejoresTerceros.has(gid);
-    if (clasifica) {
+    // Grupo sin completar: su 3º aún no está decidido → siempre en la pelea.
+    if (g.estado !== 'completo') return { cls: 'pv', label: '3º · EN LA PELEA' };
+    if (mejoresTerceros.has(g.id)) {
       return sellado
         ? { cls: 'q', label: '3º · PASA' } // definitivo
         : { cls: 'pv', label: '3º · EN LA PELEA' }; // provisional
     }
+    // 9º o peor entre los terceros de grupos completos: fuera definitivo.
     return { cls: 'out', label: '3º · FUERA' };
   }
   return { cls: 'out', label: '4º · FUERA' };

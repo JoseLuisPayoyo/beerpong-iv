@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { Grupo, Partido, EquipoPub } from './tipos';
+import type { Grupo, Partido, EquipoPub, FaseRow } from './tipos';
+import { type Sesion, leerSesion } from './sesion';
+import VistaPorra from './VistaPorra';
 import VistaGrupos from './VistaGrupos';
 import VistaCuadro from './VistaCuadro';
 
@@ -12,16 +14,17 @@ export default function TorneoApp() {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [equipos, setEquipos] = useState<EquipoPub[]>([]);
-  // Arranca en Grupos: es la vista con contenido real desde el minuto uno
-  // (Porra y Ranking son placeholders en este paso).
-  const [tab, setTab] = useState<Tab>('grupos');
+  const [fases, setFases] = useState<FaseRow[]>([]);
+  // La porra es el gancho: es la pestaña de entrada (como el mockup).
+  const [tab, setTab] = useState<Tab>('porra');
+  const [sesion, setSesion] = useState<Sesion | null>(() => leerSesion());
 
   const cargar = useCallback(async () => {
     if (!supabase) {
       setEstado('error');
       return;
     }
-    const [g, p, e] = await Promise.all([
+    const [g, p, e, f] = await Promise.all([
       supabase.from('grupos').select('id,letra,turno,estado,ganador_id').order('id'),
       supabase
         .from('partidos')
@@ -30,14 +33,16 @@ export default function TorneoApp() {
         ),
       // vista pública SIN teléfonos; la tabla privada `equipos` no se lee
       supabase.from('equipos_publicos').select('id,nombre_equipo,grupo_id,pos_grupo'),
+      supabase.from('fases').select('nombre,orden,porra_abierta,puntos').order('orden'),
     ]);
-    if (g.error || p.error || e.error) {
+    if (g.error || p.error || e.error || f.error) {
       setEstado('error');
       return;
     }
     setGrupos(g.data as Grupo[]);
     setPartidos(p.data as Partido[]);
     setEquipos(e.data as EquipoPub[]);
+    setFases(f.data as FaseRow[]);
     setEstado('listo');
   }, []);
 
@@ -69,12 +74,24 @@ export default function TorneoApp() {
 
   return (
     <div className="app">
-      <div className="hd">
+      {/* Con sesión de porra: TUS PUNTOS + barra de progreso (los puntos de
+          verdad llegan en el paso siguiente; de momento —). Sin sesión, nada. */}
+      <div className={sesion ? 'hd' : 'hd sin'}>
         <div className="hd-top">
           <div className="logo">
             BEERPONG<b> IV</b>
           </div>
+          {sesion && (
+            <div className="pts">
+              <span>TUS PUNTOS</span>—
+            </div>
+          )}
         </div>
+        {sesion && (
+          <div className="prog">
+            <i style={{ width: 0 }} />
+          </div>
+        )}
       </div>
 
       <div className="main">
@@ -94,12 +111,28 @@ export default function TorneoApp() {
           <div className="empty">
             <div className="et">Cargando…</div>
           </div>
-        ) : tab === 'grupos' ? (
-          <VistaGrupos grupos={grupos} partidos={partidos} equipos={equipos} />
-        ) : tab === 'cuadro' ? (
-          <VistaCuadro partidos={partidos} equipos={equipos} />
         ) : (
-          <Placeholder tab={tab} />
+          <>
+            {/* La porra se queda montada (oculta) al cambiar de pestaña: así
+                no se pierden las selecciones aún sin confirmar. */}
+            <div style={{ display: tab === 'porra' ? undefined : 'none' }}>
+              <VistaPorra
+                grupos={grupos}
+                partidos={partidos}
+                equipos={equipos}
+                fases={fases}
+                sesion={sesion}
+                onSesion={setSesion}
+              />
+            </div>
+            {tab === 'grupos' ? (
+              <VistaGrupos grupos={grupos} partidos={partidos} equipos={equipos} />
+            ) : tab === 'cuadro' ? (
+              <VistaCuadro partidos={partidos} equipos={equipos} />
+            ) : tab === 'ranking' ? (
+              <Placeholder />
+            ) : null}
+          </>
         )}
       </div>
 
@@ -156,20 +189,13 @@ function NavBtn({
   );
 }
 
-function Placeholder({ tab }: { tab: Tab }) {
-  const head =
-    tab === 'porra' ? (
-      <div className="sh li">
-        LA <i>PORRA</i>
-      </div>
-    ) : (
+// Ranking: llega en el paso siguiente.
+function Placeholder() {
+  return (
+    <section className="view">
       <div className="sh">
         EL <i>PROFETA</i>
       </div>
-    );
-  return (
-    <section className="view">
-      {head}
       <div className="soon">MUY PRONTO</div>
     </section>
   );
