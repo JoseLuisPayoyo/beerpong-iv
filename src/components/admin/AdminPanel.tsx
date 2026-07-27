@@ -135,7 +135,9 @@ function Panel({ session }: { session: Session }) {
   const [tab, setTab] = useState<TabId>('equipos');
 
   return (
-    <div className="pc-wrap">
+    // El modificador por pestaña es solo un gancho de clase para el layout de
+    // escritorio (≥1024px); no cambia el DOM ni tiene estilos en móvil.
+    <div className={`pc-wrap pc-wrap--${tab}`}>
       <Cabecera
         email={session.user.email ?? 'admin'}
         onSalir={() => void supabase!.auth.signOut()}

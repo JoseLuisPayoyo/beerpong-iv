@@ -938,6 +938,29 @@ body::before {
   color: var(--or);
 }
 
+/* ==== ESCRITORIO (≥1024px): la app como ventana centrada ====
+   No es un rediseño ni un bracket horizontal: la columna mantiene su ancho de
+   móvil, pero se presenta como una "app" intencionada sobre el fondo ambiental
+   (grano + glows) que ya rellena los lados a pantalla completa. Por debajo de
+   1024px no cambia nada. La nav de pestañas sigue dentro de la columna. */
+@media (min-width: 1024px) {
+  body {
+    /* centra la ventana también en vertical (por defecto se estiraba a lo alto) */
+    align-items: center;
+  }
+  .app {
+    max-width: 448px;
+    min-height: 0;
+    height: min(880px, calc(100vh - 48px));
+    border-radius: 22px;
+    overflow: hidden; /* recorta cabecera y nav a las esquinas redondeadas */
+    border: 1px solid var(--ln);
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(0, 0, 0, 0.25);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

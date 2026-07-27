@@ -851,6 +851,106 @@ button.pc-pill:disabled {
   color: #fff;
 }
 
+/* ==== ESCRITORIO (≥1024px): solo disposición, mismos tokens y estética ====
+   Mejora responsive, NO rediseño. Por debajo de 1024px no cambia nada: todo
+   lo de aquí vive dentro de este media query. El layout móvil queda idéntico.
+   Los modificadores .pc-wrap--<pestaña> son un gancho de clase (no tocan DOM). */
+@media (min-width: 1024px) {
+  /* El panel aprovecha el ancho; el login/carga (sin modificador) se quedan
+     estrechos y centrados. Semis·Final se mantiene en una columna cómoda. */
+  .pc-wrap--equipos,
+  .pc-wrap--grupos,
+  .pc-wrap--elim {
+    max-width: 1100px;
+  }
+  .pc-wrap--semis {
+    max-width: 600px;
+  }
+
+  /* ---- Equipos: resumen arriba a lo ancho + listas en 2 columnas ---- */
+  .pc-wrap--equipos .eq-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 14px;
+    row-gap: 8px;
+    align-content: start;
+  }
+  /* títulos, notas, contadores y botones ocupan toda la anchura de la rejilla */
+  .pc-wrap--equipos .eq-block > .pc-gtitle,
+  .pc-wrap--equipos .eq-block > .pc-note,
+  .pc-wrap--equipos .eq-block > .eq-count,
+  .pc-wrap--equipos .eq-block > .pc-hint,
+  .pc-wrap--equipos .eq-block > .pc-btn,
+  .pc-wrap--equipos .eq-block > .pc-confirm {
+    grid-column: 1 / -1;
+  }
+  .pc-wrap--equipos .eq-block > .pc-row {
+    margin-bottom: 0;
+  }
+  /* los botones de acción a un ancho cómodo, no a toda la mesa */
+  .pc-wrap--equipos .eq-block > .pc-btn.block {
+    max-width: 420px;
+  }
+
+  /* ---- Grupos: chips como barra lateral izquierda + partidos en 2 columnas ---- */
+  .pc-wrap--grupos .pc-chips {
+    float: left;
+    flex-direction: column;
+    width: 74px;
+    gap: 7px;
+    overflow: visible;
+    padding: 2px 0;
+    margin: 0;
+  }
+  .pc-wrap--grupos .pc-chips .pc-chip {
+    width: 100%;
+    height: 42px;
+  }
+  /* el grupo seleccionado es el hermano inmediato de los chips */
+  .pc-wrap--grupos .pc-chips + div {
+    margin-left: 92px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 12px;
+    row-gap: 8px;
+    align-content: start;
+  }
+  .pc-wrap--grupos .pc-chips + div > .pc-gtitle,
+  .pc-wrap--grupos .pc-chips + div > .pc-note {
+    grid-column: 1 / -1;
+  }
+  .pc-wrap--grupos .pc-chips + div > .pc-row,
+  .pc-wrap--grupos .pc-chips + div > .pc-edit {
+    margin-bottom: 0;
+  }
+  .pc-wrap--grupos::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+
+  /* ---- Eliminatoria: tandas en columnas una al lado de otra ----
+     float con width:50% y el canalón como padding-right (box-sizing:border-box
+     es global): dos columnas suman exactamente 100% sin margen sobrante, así
+     que nunca se cae la 2ª a la fila siguiente. */
+  .pc-wrap--elim .pc-tanda {
+    float: left;
+    width: 50%;
+    padding-right: 9px;
+  }
+  .pc-wrap--elim .eq-block {
+    clear: both; /* el botón de generar cae bajo las dos columnas */
+  }
+  .pc-wrap--elim .eq-block > .pc-btn.block {
+    max-width: 420px;
+  }
+  .pc-wrap--elim::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
