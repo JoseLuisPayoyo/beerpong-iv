@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { Grupo, Partido, EquipoPub, FaseRow } from './tipos';
+import type { Grupo, Partido, EquipoPub, FaseRow, RankingRow } from './tipos';
 import { type Sesion, leerSesion } from './sesion';
 import VistaPorra from './VistaPorra';
+import VistaRanking from './VistaRanking';
 import VistaGrupos from './VistaGrupos';
 import VistaCuadro from './VistaCuadro';
 
@@ -15,6 +16,7 @@ export default function TorneoApp() {
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [equipos, setEquipos] = useState<EquipoPub[]>([]);
   const [fases, setFases] = useState<FaseRow[]>([]);
+  const [ranking, setRanking] = useState<RankingRow[]>([]);
   // La porra es el gancho: es la pestaña de entrada (como el mockup).
   const [tab, setTab] = useState<Tab>('porra');
   const [sesion, setSesion] = useState<Sesion | null>(() => leerSesion());
@@ -46,9 +48,25 @@ export default function TorneoApp() {
     setEstado('listo');
   }, []);
 
+  // Ranking: vista pública `ranking_porra` (solo mote+puntos), publishable key.
+  // Se ordena en el cliente: puntos desc → creado_en asc (empate: antes gana).
+  // Silencioso: si falla, el ranking se queda como esté; no bloquea el torneo.
+  const cargarRanking = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from('ranking_porra')
+      .select('id,mote,puntos,aciertos,creado_en');
+    if (error || !data) return;
+    const filas = (data as RankingRow[])
+      .slice()
+      .sort((a, b) => b.puntos - a.puntos || a.creado_en.localeCompare(b.creado_en));
+    setRanking(filas);
+  }, []);
+
   useEffect(() => {
     void cargar();
-  }, [cargar]);
+    void cargarRanking();
+  }, [cargar, cargarRanking]);
 
   // Realtime: cualquier cambio del admin se refleja solo. Se recarga con un
   // pequeño debounce para agrupar ráfagas (p. ej. generar 16 partidos de golpe).
@@ -56,9 +74,14 @@ export default function TorneoApp() {
     const sb = supabase;
     if (!sb) return;
     let t: ReturnType<typeof setTimeout> | undefined;
+    // Las vistas (ranking_porra) no emiten Realtime por sí solas; se refresca a
+    // rebufo de los resultados, que es justo cuando cambian los puntos.
     const refetch = () => {
       clearTimeout(t);
-      t = setTimeout(() => void cargar(), 250);
+      t = setTimeout(() => {
+        void cargar();
+        void cargarRanking();
+      }, 250);
     };
     const canal = sb
       .channel('torneo-publico')
@@ -70,12 +93,51 @@ export default function TorneoApp() {
       clearTimeout(t);
       void sb.removeChannel(canal);
     };
-  }, [cargar]);
+  }, [cargar, cargarRanking]);
+
+  // Poll cada 30s SOLO mientras la pestaña Ranking está visible: para que
+  // aparezcan los que se apunten nuevos (altas que no disparan Realtime). Se
+  // para al cambiar de pestaña o si la página se oculta (document.hidden).
+  useEffect(() => {
+    if (tab !== 'ranking') return;
+    let id: ReturnType<typeof setInterval> | undefined;
+    const parar = () => {
+      if (id) {
+        clearInterval(id);
+        id = undefined;
+      }
+    };
+    const sincronizar = () => {
+      if (document.hidden) {
+        parar();
+      } else if (!id) {
+        void cargarRanking(); // refresca al entrar/volver a ser visible
+        id = setInterval(() => void cargarRanking(), 30000);
+      }
+    };
+    sincronizar();
+    document.addEventListener('visibilitychange', sincronizar);
+    return () => {
+      parar();
+      document.removeEventListener('visibilitychange', sincronizar);
+    };
+  }, [tab, cargarRanking]);
+
+  // Tus puntos (de tu fila del ranking) y avance del torneo para la cabecera.
+  const misPuntos = useMemo(
+    () => (sesion ? (ranking.find((r) => r.id === sesion.id)?.puntos ?? 0) : null),
+    [sesion, ranking],
+  );
+  const avance = useMemo(() => {
+    if (partidos.length === 0) return 0;
+    const jugados = partidos.filter((p) => p.estado === 'jugado').length;
+    return (jugados / partidos.length) * 100;
+  }, [partidos]);
 
   return (
     <div className="app">
-      {/* Con sesión de porra: TUS PUNTOS + barra de progreso (los puntos de
-          verdad llegan en el paso siguiente; de momento —). Sin sesión, nada. */}
+      {/* Con sesión de porra: TUS PUNTOS (de tu fila del ranking) + barra de
+          avance del torneo (partidos jugados / total). Sin sesión, nada. */}
       <div className={sesion ? 'hd' : 'hd sin'}>
         <div className="hd-top">
           <div className="logo">
@@ -83,13 +145,14 @@ export default function TorneoApp() {
           </div>
           {sesion && (
             <div className="pts">
-              <span>TUS PUNTOS</span>—
+              <span>TUS PUNTOS</span>
+              {misPuntos}
             </div>
           )}
         </div>
         {sesion && (
           <div className="prog">
-            <i style={{ width: 0 }} />
+            <i style={{ width: `${avance}%` }} />
           </div>
         )}
       </div>
@@ -130,7 +193,7 @@ export default function TorneoApp() {
             ) : tab === 'cuadro' ? (
               <VistaCuadro partidos={partidos} equipos={equipos} />
             ) : tab === 'ranking' ? (
-              <Placeholder />
+              <VistaRanking ranking={ranking} sesion={sesion} />
             ) : null}
           </>
         )}
@@ -186,17 +249,5 @@ function NavBtn({
       {children}
       {label}
     </button>
-  );
-}
-
-// Ranking: llega en el paso siguiente.
-function Placeholder() {
-  return (
-    <section className="view">
-      <div className="sh">
-        EL <i>PROFETA</i>
-      </div>
-      <div className="soon">MUY PRONTO</div>
-    </section>
   );
 }

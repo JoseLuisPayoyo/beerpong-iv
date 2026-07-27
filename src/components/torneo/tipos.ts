@@ -66,3 +66,13 @@ export interface PickGuardado {
   partido_id: Id | null;
   pick_equipo_id: Id;
 }
+
+// Fila de la vista pública `ranking_porra` (solo mote y puntos; nunca picks ni
+// hashes). Se lee directa con la publishable key y se ordena en el cliente.
+export interface RankingRow {
+  id: string;
+  mote: string;
+  puntos: number;
+  aciertos: number;
+  creado_en: string; // ISO; desempate por antigüedad (asc)
+}
