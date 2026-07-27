@@ -929,25 +929,19 @@ button.pc-pill:disabled {
     clear: both;
   }
 
-  /* ---- Eliminatoria: tandas en columnas una al lado de otra ----
-     float con width:50% y el canalón como padding-right (box-sizing:border-box
-     es global): dos columnas suman exactamente 100% sin margen sobrante, así
-     que nunca se cae la 2ª a la fila siguiente. */
-  .pc-wrap--elim .pc-tanda {
-    float: left;
-    width: 50%;
-    padding-right: 9px;
+  /* ---- Eliminatoria: tandas en 2 columnas con CSS Grid ----
+     Filas alineadas aunque las tandas tengan distinta altura (nada de masonry). */
+  .pc-wrap--elim .pc-tandas {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    align-items: start;
   }
-  .pc-wrap--elim .eq-block {
-    clear: both; /* el botón de generar cae bajo las dos columnas */
+  .pc-wrap--elim .pc-tandas > .pc-tanda {
+    margin-bottom: 0; /* el hueco vertical lo pone el gap de la rejilla */
   }
   .pc-wrap--elim .eq-block > .pc-btn.block {
     max-width: 420px;
-  }
-  .pc-wrap--elim::after {
-    content: '';
-    display: block;
-    clear: both;
   }
 }
 

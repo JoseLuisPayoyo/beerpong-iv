@@ -392,8 +392,9 @@ export default function Eliminatoria() {
         </div>
       )}
 
-      {rondaActiva &&
-        tandas.map((t, idx) => {
+      {rondaActiva && (
+        <div className="pc-tandas">
+          {tandas.map((t, idx) => {
           const deTanda = partidosRonda.filter((p) => (p.tanda ?? 1) === t);
           const anterior = idx > 0 ? partidosRonda.filter((p) => (p.tanda ?? 1) === tandas[idx - 1]) : [];
           const bloqueada = idx > 0 && !anterior.some((p) => p.estado === 'jugado');
@@ -430,7 +431,9 @@ export default function Eliminatoria() {
               )}
             </div>
           );
-        })}
+          })}
+        </div>
+      )}
 
       {siguiente && (
         <div className="eq-block">
