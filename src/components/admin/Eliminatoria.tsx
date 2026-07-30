@@ -260,8 +260,29 @@ export default function Eliminatoria() {
     return generarRonda('cuartos', 'semifinal', 'Semifinales regeneradas en borrador.');
   }
 
+  // Al arrancar el PRIMER cruce de una fase se apaga también la bandera de su
+  // porra: la fase ya ha empezado y los contadores/chips no deben mentir.
+  // (El cierre por cruce sigue igual: esto solo apaga la bandera.)
+  async function cerrarPorraFase(nombreFase: string) {
+    setErrOp(null);
+    const { error } = vigilar(
+      await sb.from('fases').update({ porra_abierta: false }).eq('nombre', nombreFase),
+    );
+    if (error) {
+      setErrOp({
+        texto: `El cruce está en juego, pero NO se pudo cerrar la porra de la fase. (${error.message})`,
+        reintentar: () => void cerrarPorraFase(nombreFase),
+      });
+      return;
+    }
+    setFases((prev) =>
+      prev.map((f) => (f.nombre === nombreFase ? { ...f, porra_abierta: false } : f)),
+    );
+  }
+
   // ---- partidos ----
   async function marcarEnJuego(p: Partido) {
+    const primeraDeLaFase = deFase(p.fase).every((x) => x.estado === 'pendiente');
     setErrOp(null);
     setMarcando(p.id);
     const { error } = vigilar(
@@ -277,6 +298,7 @@ export default function Eliminatoria() {
     }
     patch(p.id, { estado: 'en_juego' });
     setScores((s) => ({ ...s, [String(p.id)]: { a: 0, b: 0 } }));
+    if (primeraDeLaFase) await cerrarPorraFase(p.fase);
   }
 
   // Deshacer un «Marcar en juego» que fue un error (mesa o cruce equivocado).

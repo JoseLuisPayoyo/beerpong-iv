@@ -18,12 +18,32 @@ export async function calcularDesfase(): Promise<number> {
   }
 }
 
-/** La fase con porra abierta y hora objetivo aún en el futuro (si la hay). */
-export function faseConCuenta(fases: FaseRow[], desfase: number): FaseRow | null {
+/** ¿La fase ya ha empezado? (algún partido suyo fuera de `pendiente`).
+    La fase de porra 'grupos' corresponde a partidos.fase='grupo'. */
+export function faseEmpezada(
+  nombre: string,
+  partidos: { fase: string; estado: string }[],
+): boolean {
+  const f = nombre === 'grupos' ? 'grupo' : nombre;
+  return partidos.some((p) => p.fase === f && p.estado !== 'pendiente');
+}
+
+/** La fase con cuenta atrás en marcha: porra abierta, hora en el futuro y
+    SIN empezar (si ya rueda un partido, el reloj sobra aunque no llegara a
+    cero). Con varias candidatas gana la de menor orden (fases viene ordenada). */
+export function faseConCuenta(
+  fases: FaseRow[],
+  partidos: { fase: string; estado: string }[],
+  desfase: number,
+): FaseRow | null {
   const ahora = Date.now() + desfase;
   return (
     fases.find(
-      (f) => f.porra_abierta && f.hora_inicio != null && new Date(f.hora_inicio).getTime() > ahora,
+      (f) =>
+        f.porra_abierta &&
+        f.hora_inicio != null &&
+        new Date(f.hora_inicio).getTime() > ahora &&
+        !faseEmpezada(f.nombre, partidos),
     ) ?? null
   );
 }

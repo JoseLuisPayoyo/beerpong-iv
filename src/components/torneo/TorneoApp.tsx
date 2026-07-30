@@ -182,7 +182,7 @@ export default function TorneoApp() {
   }, [partidos]);
 
   // Fase con porra abierta y cuenta atrás en marcha (para la cabecera).
-  const faseCuenta = faseConCuenta(fases, desfase);
+  const faseCuenta = faseConCuenta(fases, partidos, desfase);
 
   return (
     <div className="app">

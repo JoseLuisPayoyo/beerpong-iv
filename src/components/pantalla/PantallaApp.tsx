@@ -250,10 +250,20 @@ export default function PantallaApp() {
       null;
     if (vivo) return { v: 'marcador', p: vivo };
 
-    // 3) porra abierta con hora futura → cuenta atrás
+    // 3) porra abierta con hora futura Y fase sin empezar → cuenta atrás.
+    //    Si ya rueda un partido de la fase, fuera el reloj aunque no llegara a
+    //    cero (nada de contadores zombis de fases jugadas). `fases` viene
+    //    ordenada por orden: con varias candidatas gana la más temprana.
+    const empezada = (nombre: string) => {
+      const f = nombre === 'grupos' ? 'grupo' : nombre;
+      return partidos.some((p) => p.fase === f && p.estado !== 'pendiente');
+    };
     const conCuenta = fases.find(
       (f) =>
-        f.porra_abierta && f.hora_inicio != null && new Date(f.hora_inicio).getTime() > ahora,
+        f.porra_abierta &&
+        f.hora_inicio != null &&
+        new Date(f.hora_inicio).getTime() > ahora &&
+        !empezada(f.nombre),
     );
     if (conCuenta) return { v: 'cuenta', fase: conCuenta };
 

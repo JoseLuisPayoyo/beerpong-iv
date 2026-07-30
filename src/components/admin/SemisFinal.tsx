@@ -89,7 +89,29 @@ export default function SemisFinal() {
     setPartidos((prev) => prev.map((p) => (p.id === id ? { ...p, ...cambios } : p)));
   }
 
+  // Al arrancar el PRIMER partido de una fase se apaga también la bandera de
+  // su porra (la fase ya ha empezado; contadores y chips no deben mentir).
+  async function cerrarPorraFase(nombreFase: string) {
+    setErrOp(null);
+    const { error } = vigilar(
+      await sb.from('fases').update({ porra_abierta: false }).eq('nombre', nombreFase),
+    );
+    if (error) {
+      setErrOp({
+        texto: `El partido está en directo, pero NO se pudo cerrar la porra de la fase. (${error.message})`,
+        reintentar: () => void cerrarPorraFase(nombreFase),
+      });
+      return;
+    }
+    setFases((prev) =>
+      prev.map((f) => (f.nombre === nombreFase ? { ...f, porra_abierta: false } : f)),
+    );
+  }
+
   async function iniciarDirecto(p: Partido) {
+    const primeraDeLaFase = partidos
+      .filter((x) => x.fase === p.fase)
+      .every((x) => x.estado === 'pendiente');
     setErrOp(null);
     setOcupado(p.id);
     const { error } = vigilar(
@@ -107,6 +129,7 @@ export default function SemisFinal() {
       return;
     }
     patch(p.id, { estado: 'en_juego', vasos_a: 0, vasos_b: 0 });
+    if (primeraDeLaFase) await cerrarPorraFase(p.fase);
   }
 
   // Deshacer un «Iniciar en directo» que fue un error.

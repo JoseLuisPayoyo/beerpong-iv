@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Grupo, Partido, EquipoPub, FaseRow, FasePorra, PickGuardado, Id } from './tipos';
 import { type Sesion, guardarSesion, borrarSesion } from './sesion';
-import { horaCorta, useRestante } from './CuentaAtras';
+import { faseEmpezada, horaCorta, useRestante } from './CuentaAtras';
 import { horaDeFase } from '../../lib/horarios';
 
 // La porra: alta con mote+PIN y picks por fase. Las escrituras van a
@@ -21,14 +21,22 @@ const CHIPS: { fase: FasePorra; label: string; ronda: string }[] = [
 
 type EstadoChip = 'abierta' | 'cerrada' | 'bloqueada';
 
-// Estado del chip según la BD: abierta (porra_abierta), cerrada (ya hay
-// partidos de la fase, o 'grupos', que nace abierta y nunca se bloquea) o
-// bloqueada (la fase aún no existe en el cuadro).
+// Estado del chip derivado de la BD Y de sus partidos (la bandera sola miente
+// en fases que ya empezaron):
+//   BLOQUEADA → la fase no tiene partidos publicados.
+//   ABIERTA   → porra_abierta y queda al menos un cruce en `pendiente`.
+//   CERRADA   → lo demás (ya empezó, ya terminó o la bandera está apagada).
+// 'grupos' va aparte: se apuesta por ganador de grupo y abre ANTES de que
+// existan los 72 partidos, así que está abierta mientras la bandera lo diga
+// y no haya arrancado ningún partido de grupos.
 function estadoChip(fase: FasePorra, fases: FaseRow[], partidos: Partido[]): EstadoChip {
-  const row = fases.find((f) => f.nombre === fase);
-  if (row?.porra_abierta) return 'abierta';
-  if (fase === 'grupos') return 'cerrada';
-  return partidos.some((p) => p.fase === fase) ? 'cerrada' : 'bloqueada';
+  const abiertaFlag = fases.find((f) => f.nombre === fase)?.porra_abierta ?? false;
+  if (fase === 'grupos') {
+    return abiertaFlag && !faseEmpezada('grupos', partidos) ? 'abierta' : 'cerrada';
+  }
+  const suyos = partidos.filter((p) => p.fase === fase);
+  if (suyos.length === 0) return 'bloqueada';
+  return abiertaFlag && suyos.some((p) => p.estado === 'pendiente') ? 'abierta' : 'cerrada';
 }
 
 interface Aviso {
@@ -317,7 +325,7 @@ export default function VistaPorra({
         })}
       </div>
 
-      {faseAbierta && faseRow?.hora_inicio && (
+      {faseAbierta && faseRow?.hora_inicio && !faseEmpezada(fase, partidos) && (
         <TarjetaCuenta horaInicio={faseRow.hora_inicio} desfase={desfase} />
       )}
 

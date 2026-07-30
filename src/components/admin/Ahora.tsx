@@ -366,7 +366,23 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
     });
   }
 
+  // Al arrancar el PRIMER cruce de una fase se apaga también la bandera de su
+  // porra (la fase ya ha empezado; los contadores/chips no deben mentir).
+  async function cerrarPorraFase(nombreFase: string) {
+    setErrOp(null);
+    const { error } = vigilar(
+      await sb.from('fases').update({ porra_abierta: false }).eq('nombre', nombreFase),
+    );
+    if (error) {
+      setErrOp({
+        texto: `El cruce está en juego, pero NO se pudo cerrar la porra de la fase. (${error.message})`,
+        reintentar: () => void cerrarPorraFase(nombreFase),
+      });
+    }
+  }
+
   async function empezarTanda(f: FaseElim, tanda: number) {
+    const primeraDeLaFase = deFase(f).every((p) => p.estado === 'pendiente');
     setErrOp(null);
     setAccion(true);
     const { error } = vigilar(
@@ -385,11 +401,14 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
       });
       return;
     }
+    if (primeraDeLaFase) await cerrarPorraFase(f);
     await cargar();
     setAviso({ tipo: 'ok', texto: `Tanda ${tanda} en juego: su porra queda cerrada.` });
   }
 
   async function marcarEnJuego(p: Partido) {
+    const primeraDeLaFase =
+      p.fase !== 'grupo' && deFase(p.fase).every((x) => x.estado === 'pendiente');
     setErrOp(null);
     setMarcando(p.id);
     const { error } = vigilar(
@@ -403,6 +422,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
       });
       return;
     }
+    if (primeraDeLaFase) await cerrarPorraFase(p.fase);
     await cargar();
   }
 
