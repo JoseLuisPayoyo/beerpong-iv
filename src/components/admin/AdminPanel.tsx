@@ -1,16 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
+import { useSinConexion } from './red';
+import Ahora from './Ahora';
 import Equipos from './Equipos';
 import Grupos from './Grupos';
 import Eliminatoria from './Eliminatoria';
 import SemisFinal from './SemisFinal';
 
 const TABS = [
+  { id: 'ahora', label: 'Ahora' },
   { id: 'equipos', label: 'Equipos' },
   { id: 'grupos', label: 'Grupos' },
-  { id: 'elim', label: 'Eliminatoria' },
-  { id: 'semis', label: 'Semis · Final' },
+  { id: 'elim', label: 'Eliminat.' },
+  { id: 'semis', label: 'Semis·Final' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
@@ -50,9 +53,22 @@ export default function AdminPanel() {
   return <Panel session={session} />;
 }
 
+// Aviso fijo mientras el panel esté «sin conexión»: se enciende cuando una
+// petición falla por red y solo se apaga cuando otra vuelve a ir bien.
+function BannerConexion() {
+  const sinConexion = useSinConexion();
+  if (!sinConexion) return null;
+  return (
+    <div className="pc-offline" role="alert">
+      📡 Sin conexión — los cambios no se están guardando.
+    </div>
+  );
+}
+
 function Cabecera({ email, onSalir }: { email?: string; onSalir?: () => void }) {
   return (
     <>
+      <BannerConexion />
       <div className="pc-head">
         <div>
           <div className="pc-title">Panel de control</div>
@@ -132,7 +148,8 @@ function Login() {
 }
 
 function Panel({ session }: { session: Session }) {
-  const [tab, setTab] = useState<TabId>('equipos');
+  // «Ahora» es la puerta de entrada: lo primero que se ve al abrir el panel.
+  const [tab, setTab] = useState<TabId>('ahora');
 
   return (
     // El modificador por pestaña es solo un gancho de clase para el layout de
@@ -155,6 +172,7 @@ function Panel({ session }: { session: Session }) {
           </button>
         ))}
       </div>
+      {tab === 'ahora' && <Ahora onIr={setTab} />}
       {tab === 'equipos' && <Equipos />}
       {tab === 'grupos' && <Grupos />}
       {tab === 'elim' && <Eliminatoria />}

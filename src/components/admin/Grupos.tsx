@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { clasificar } from '../../lib/clasificacion';
-import { ConfirmButton, Toast, useAviso } from './ui';
+import { derivarGrupo } from './acciones';
+import {
+  ConfirmButton,
+  ErrorPersistente,
+  TarjetaCorreccion,
+  Toast,
+  textoCorreccion,
+  useAviso,
+  type ErrorOp,
+} from './ui';
+import { vigilar } from './red';
 
 const sb = supabase!;
 
@@ -37,19 +46,21 @@ export default function Grupos() {
   const [grupos, setGrupos] = useState<Grupo[] | null>(null);
   const [partidos, setPartidos] = useState<Partido[]>([]);
   const [nombres, setNombres] = useState<Map<Id, string>>(new Map());
+  const [hayEliminatoria, setHayEliminatoria] = useState(false);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [aviso, setAviso] = useAviso();
+  const [errOp, setErrOp] = useState<ErrorOp | null>(null);
 
   const [sel, setSel] = useState<number | null>(null); // chip de grupo seleccionado
   const [iniciando, setIniciando] = useState<number | null>(null); // turno en proceso
-  const [editando, setEditando] = useState<Id | null>(null); // partido en edición
+  const [editando, setEditando] = useState<Id | null>(null); // partido en edición (nuevo o corrección)
   const [score, setScore] = useState<{ a: number; b: number }>({ a: 0, b: 0 });
   const [editErr, setEditErr] = useState<string | null>(null);
   const [guardando, setGuardando] = useState<Id | null>(null);
 
   const cargar = useCallback(async () => {
     setErrorCarga(null);
-    const [rGrupos, rPartidos, rEquipos] = await Promise.all([
+    const [rGrupos, rPartidos, rEquipos, rElim] = await Promise.all([
       sb.from('grupos').select('id,letra,turno,estado,ganador_id').order('id', { ascending: true }),
       sb
         .from('partidos')
@@ -58,13 +69,19 @@ export default function Grupos() {
         .order('grupo_id', { ascending: true })
         .order('orden', { ascending: true }),
       sb.from('equipos').select('id,nombre_equipo'),
+      sb.from('partidos').select('id').eq('fase', 'dieciseisavos').limit(1),
     ]);
-    if (rGrupos.error || rPartidos.error || rEquipos.error) {
+    vigilar(rGrupos);
+    vigilar(rPartidos);
+    vigilar(rEquipos);
+    vigilar(rElim);
+    if (rGrupos.error || rPartidos.error || rEquipos.error || rElim.error) {
       setErrorCarga('No se pudieron cargar los grupos.');
       return;
     }
     setGrupos(rGrupos.data as Grupo[]);
     setPartidos(rPartidos.data as Partido[]);
+    setHayEliminatoria(rElim.data.length > 0);
     setNombres(
       new Map(
         (rEquipos.data as { id: Id; nombre_equipo: string }[]).map((e) => [e.id, e.nombre_equipo]),
@@ -108,26 +125,31 @@ export default function Grupos() {
   );
 
   async function iniciarTurno(n: number) {
+    setErrOp(null);
     setIniciando(n);
     // 1) abrir los 6 grupos del turno
-    const { error: eg } = await sb.from('grupos').update({ estado: 'en_curso' }).eq('turno', n);
+    const { error: eg } = vigilar(
+      await sb.from('grupos').update({ estado: 'en_curso' }).eq('turno', n),
+    );
     if (eg) {
       setIniciando(null);
-      setAviso({ tipo: 'err', texto: `No se pudo iniciar el turno ${n}. (${eg.message})` });
+      setErrOp({
+        texto: `No se pudo iniciar el turno ${n}. (${eg.message})`,
+        reintentar: () => void iniciarTurno(n),
+      });
       return;
     }
     // 2) el Turno 1 cierra además la porra de grupos (irreversible de cara al público)
     if (n === 1) {
-      const { error: ef } = await sb
-        .from('fases')
-        .update({ porra_abierta: false })
-        .eq('nombre', 'grupos');
+      const { error: ef } = vigilar(
+        await sb.from('fases').update({ porra_abierta: false }).eq('nombre', 'grupos'),
+      );
       if (ef) {
         await cargar();
         setIniciando(null);
-        setAviso({
-          tipo: 'err',
+        setErrOp({
           texto: `Turno 1 iniciado, pero NO se pudo cerrar la porra de grupos. (${ef.message})`,
+          reintentar: () => void cerrarPorraGrupos(),
         });
         return;
       }
@@ -143,15 +165,60 @@ export default function Grupos() {
     });
   }
 
+  // Reintento aislado del cierre de porra (el turno ya quedó iniciado).
+  async function cerrarPorraGrupos() {
+    setErrOp(null);
+    const { error } = vigilar(
+      await sb.from('fases').update({ porra_abierta: false }).eq('nombre', 'grupos'),
+    );
+    if (error) {
+      setErrOp({
+        texto: `Sigue sin poder cerrarse la porra de grupos. (${error.message})`,
+        reintentar: () => void cerrarPorraGrupos(),
+      });
+      return;
+    }
+    setAviso({ tipo: 'ok', texto: 'Porra de grupos cerrada.' });
+  }
+
   function abrirEdicion(p: Partido) {
     setEditando(p.id);
-    setScore({ a: 0, b: 0 });
+    // Corrección: precarga el marcador guardado; partido nuevo: 0–0.
+    setScore(
+      p.estado === 'jugado' ? { a: p.vasos_a ?? 0, b: p.vasos_b ?? 0 } : { a: 0, b: 0 },
+    );
     setEditErr(null);
   }
 
   function paso(side: 'a' | 'b', d: number) {
     setScore((s) => ({ ...s, [side]: Math.max(0, Math.min(10, s[side] + d)) }));
     setEditErr(null);
+  }
+
+  // Reescribe estado y 1º de un grupo. Con reintento propio: si falla, el
+  // resultado del partido YA está guardado y solo hay que repetir esta parte.
+  async function reescribirGrupo(
+    gid: number,
+    estado: EstadoGrupo,
+    ganadorId: Id | null,
+    avisoOk: string,
+  ) {
+    setErrOp(null);
+    const { error } = vigilar(
+      await sb.from('grupos').update({ estado, ganador_id: ganadorId }).eq('id', gid),
+    );
+    if (error) {
+      setErrOp({
+        texto: `El resultado está guardado, pero no se pudo actualizar el grupo (estado y 1º). (${error.message})`,
+        reintentar: () => void reescribirGrupo(gid, estado, ganadorId, avisoOk),
+      });
+      return;
+    }
+    setGrupos(
+      (prev) =>
+        prev && prev.map((g) => (g.id === gid ? { ...g, estado, ganador_id: ganadorId } : g)),
+    );
+    setAviso({ tipo: 'ok', texto: avisoOk });
   }
 
   async function guardar(p: Partido) {
@@ -166,14 +233,20 @@ export default function Grupos() {
     }
     const ganador_id = a > b ? p.equipo_a : p.equipo_b;
 
+    setErrOp(null);
     setGuardando(p.id);
-    const { error } = await sb
-      .from('partidos')
-      .update({ vasos_a: a, vasos_b: b, ganador_id, estado: 'jugado' })
-      .eq('id', p.id);
+    const { error } = vigilar(
+      await sb
+        .from('partidos')
+        .update({ vasos_a: a, vasos_b: b, ganador_id, estado: 'jugado' })
+        .eq('id', p.id),
+    );
     if (error) {
       setGuardando(null);
-      setAviso({ tipo: 'err', texto: `No se pudo guardar el resultado. (${error.message})` });
+      setErrOp({
+        texto: `No se pudo guardar ${nombre(p.equipo_a)} ${a}–${b} ${nombre(p.equipo_b)}. (${error.message})`,
+        reintentar: () => void guardar(p),
+      });
       return;
     }
 
@@ -181,43 +254,52 @@ export default function Grupos() {
     const nuevosPartidos = partidos.map((x) =>
       x.id === p.id ? { ...x, vasos_a: a, vasos_b: b, ganador_id, estado: 'jugado' as const } : x,
     );
-
-    // ¿El grupo queda completo? (sus 6 partidos jugados)
-    const delGrupo = nuevosPartidos.filter((x) => x.grupo_id === p.grupo_id);
-    const completo = delGrupo.length === 6 && delGrupo.every((x) => x.estado === 'jugado');
-    let avisoOk = 'Resultado guardado.';
-    if (completo) {
-      // 1º del grupo por clasificación (PTS → DIF → VF): lo necesita la porra.
-      const equipoIds = [...new Set(delGrupo.flatMap((x) => [x.equipo_a, x.equipo_b]))];
-      const ganadorId = clasificar(equipoIds, delGrupo)[0]?.equipoId ?? null;
-      const { error: eg } = await sb
-        .from('grupos')
-        .update({ estado: 'completo', ganador_id: ganadorId })
-        .eq('id', p.grupo_id);
-      if (eg) {
-        setPartidos(nuevosPartidos);
-        setGuardando(null);
-        setEditando(null);
-        setAviso({
-          tipo: 'err',
-          texto: `Resultado guardado, pero no se pudo marcar el grupo como completo. (${eg.message})`,
-        });
-        return;
-      }
-      setGrupos(
-        (prev) =>
-          prev &&
-          prev.map((g) =>
-            g.id === p.grupo_id ? { ...g, estado: 'completo', ganador_id: ganadorId } : g,
-          ),
-      );
-      avisoOk = `Grupo completo: los 6 partidos están jugados.`;
-    }
-
     setPartidos(nuevosPartidos);
     setGuardando(null);
     setEditando(null);
-    setAviso({ tipo: 'ok', texto: avisoOk });
+
+    // ¿El grupo queda completo? (sus 6 partidos jugados)
+    const delGrupo = nuevosPartidos.filter((x) => x.grupo_id === p.grupo_id);
+    const { estado, ganadorId } = derivarGrupo(delGrupo);
+    if (estado === 'completo') {
+      await reescribirGrupo(
+        p.grupo_id,
+        estado,
+        ganadorId,
+        'Grupo completo: los 6 partidos están jugados.',
+      );
+    } else {
+      setAviso({ tipo: 'ok', texto: 'Resultado guardado.' });
+    }
+  }
+
+  // Corrección de un partido ya jugado: sobrescribe el marcador y recalcula
+  // SIEMPRE el estado y el 1º del grupo (pueden cambiar con la corrección).
+  async function corregir(p: Partido, a: number, b: number) {
+    const ganador_id = a > b ? p.equipo_a : p.equipo_b;
+    setErrOp(null);
+    setGuardando(p.id);
+    const { error } = vigilar(
+      await sb.from('partidos').update({ vasos_a: a, vasos_b: b, ganador_id }).eq('id', p.id),
+    );
+    if (error) {
+      setGuardando(null);
+      setErrOp({
+        texto: `No se pudo corregir el resultado; sigue guardado ${p.vasos_a}–${p.vasos_b}. (${error.message})`,
+        reintentar: () => void corregir(p, a, b),
+      });
+      return;
+    }
+    const nuevosPartidos = partidos.map((x) =>
+      x.id === p.id ? { ...x, vasos_a: a, vasos_b: b, ganador_id } : x,
+    );
+    setPartidos(nuevosPartidos);
+    setGuardando(null);
+    setEditando(null);
+
+    const delGrupo = nuevosPartidos.filter((x) => x.grupo_id === p.grupo_id);
+    const { estado, ganadorId } = derivarGrupo(delGrupo);
+    await reescribirGrupo(p.grupo_id, estado, ganadorId, 'Resultado corregido.');
   }
 
   if (errorCarga) {
@@ -252,7 +334,7 @@ export default function Grupos() {
     <>
       <p className="pc-note-top">
         Activa un turno para abrir sus 6 grupos. Dentro, mete los resultados en el orden que te dé
-        la gana.
+        la gana. Un resultado guardado se puede corregir con su botón «Corregir».
       </p>
 
       {TURNOS.map(({ n, label }) => {
@@ -328,6 +410,36 @@ export default function Grupos() {
             const a = nombre(p.equipo_a);
             const b = nombre(p.equipo_b);
 
+            // Corrección de un partido ya jugado
+            if (editando === p.id && p.estado === 'jugado') {
+              const nuevoGanador = score.a > score.b ? p.equipo_a : p.equipo_b;
+              const valido = score.a !== score.b && Math.max(score.a, score.b) === 10;
+              const cambia = score.a !== p.vasos_a || score.b !== p.vasos_b;
+              return (
+                <TarjetaCorreccion
+                  key={p.id}
+                  nombreA={a}
+                  nombreB={b}
+                  marcadorActual={`${p.vasos_a}–${p.vasos_b}`}
+                  score={score}
+                  pregunta={textoCorreccion({
+                    antes: [p.vasos_a ?? 0, p.vasos_b ?? 0],
+                    ahora: [score.a, score.b],
+                    ganadorAntes: nombre(p.ganador_id),
+                    ganadorAhora: nombre(nuevoGanador),
+                    avisoRonda: hayEliminatoria
+                      ? 'OJO: los dieciseisavos ya están generados. Si cambias este resultado tendrás que regenerarlos en la pestaña Eliminatoria.'
+                      : null,
+                  })}
+                  puedeGuardar={valido && cambia}
+                  guardando={guardando === p.id}
+                  onPaso={paso}
+                  onConfirmar={() => void corregir(p, score.a, score.b)}
+                  onSalir={() => setEditando(null)}
+                />
+              );
+            }
+
             if (p.estado === 'jugado') {
               return (
                 <div className="pc-row" key={p.id}>
@@ -340,6 +452,13 @@ export default function Grupos() {
                     {p.vasos_a}–{p.vasos_b}
                   </span>
                   <span className="win">{nombre(p.ganador_id)}</span>
+                  <button
+                    className="pc-corr"
+                    disabled={guardando !== null}
+                    onClick={() => abrirEdicion(p)}
+                  >
+                    Corregir
+                  </button>
                 </div>
               );
             }
@@ -425,6 +544,7 @@ export default function Grupos() {
         </div>
       )}
 
+      <ErrorPersistente err={errOp} onDescartar={() => setErrOp(null)} />
       <Toast aviso={aviso} />
     </>
   );

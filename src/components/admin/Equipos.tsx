@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { ConfirmButton, Toast, useAviso } from './ui';
+import {
+  BotonRegenerar,
+  ConfirmButton,
+  ErrorPersistente,
+  Toast,
+  textoBorrado,
+  useAviso,
+  type ErrorOp,
+} from './ui';
+import { vigilar } from './red';
 
 // AdminPanel comprueba que el cliente existe antes de montar esta pestaña.
 const sb = supabase!;
@@ -55,22 +64,27 @@ function barajar<T>(lista: T[]): T[] {
 
 export default function Equipos() {
   const [equipos, setEquipos] = useState<Equipo[] | null>(null);
+  const [hayPartidos, setHayPartidos] = useState(false); // ya existen los 72 de grupos
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [aviso, setAviso] = useAviso();
+  const [errOp, setErrOp] = useState<ErrorOp | null>(null);
   const [escribiendo, setEscribiendo] = useState<Set<Id>>(new Set());
   const [accion, setAccion] = useState<'sorteo' | 'vaciar' | 'partidos' | null>(null);
 
   const cargar = useCallback(async () => {
     setErrorCarga(null);
-    const { data, error } = await sb
-      .from('equipos')
-      .select('*')
-      .order('created_at', { ascending: true });
-    if (error) {
+    const [rEquipos, rPartidos] = await Promise.all([
+      sb.from('equipos').select('*').order('created_at', { ascending: true }),
+      sb.from('partidos').select('id').eq('fase', 'grupo').limit(1),
+    ]);
+    vigilar(rEquipos);
+    vigilar(rPartidos);
+    if (rEquipos.error || rPartidos.error) {
       setErrorCarga('No se pudo cargar la lista de equipos.');
       return;
     }
-    setEquipos(data as Equipo[]);
+    setEquipos(rEquipos.data as Equipo[]);
+    setHayPartidos(rPartidos.data.length > 0);
   }, []);
 
   useEffect(() => {
@@ -116,20 +130,25 @@ export default function Equipos() {
   const ocupado = (id: Id) => escribiendo.has(id) || accion !== null;
 
   // Escritura de un equipo: la UI solo cambia cuando Supabase confirma.
+  // Si falla, error persistente con Reintentar que repite exactamente lo mismo.
   async function actualizar(
     id: Id,
     cambios: Partial<Pick<Equipo, 'estado' | 'grupo_id' | 'pos_grupo'>>,
     textoError: string,
   ): Promise<boolean> {
+    setErrOp(null);
     setEscribiendo((prev) => new Set(prev).add(id));
-    const { error } = await sb.from('equipos').update(cambios).eq('id', id);
+    const { error } = vigilar(await sb.from('equipos').update(cambios).eq('id', id));
     setEscribiendo((prev) => {
       const s = new Set(prev);
       s.delete(id);
       return s;
     });
     if (error) {
-      setAviso({ tipo: 'err', texto: `${textoError} (${error.message})` });
+      setErrOp({
+        texto: `${textoError} (${error.message})`,
+        reintentar: () => void actualizar(id, cambios, textoError),
+      });
       return false;
     }
     setEquipos((prev) => prev && prev.map((e) => (e.id === id ? { ...e, ...cambios } : e)));
@@ -182,6 +201,7 @@ export default function Equipos() {
     }
 
     const n = Math.min(pendientes.length, huecos.length);
+    setErrOp(null);
     setAccion('sorteo');
     const resultados = await Promise.all(
       pendientes.slice(0, n).map((e, i) =>
@@ -191,11 +211,17 @@ export default function Equipos() {
           .eq('id', e.id),
       ),
     );
+    resultados.forEach(vigilar);
     const fallos = resultados.filter((r) => r.error).length;
     await cargar(); // la BD manda: resincroniza la lista entera
     setAccion(null);
     if (fallos > 0) {
-      setAviso({ tipo: 'err', texto: `Sorteo con ${fallos} escrituras fallidas; revisa la lista.` });
+      // El reintento sortea SOLO los que quedaron sin grupo, con la lista ya
+      // resincronizada (vía ref: la de este cierre está obsoleta).
+      setErrOp({
+        texto: `Sorteo incompleto: ${fallos} equipos se quedaron sin asignar.`,
+        reintentar: () => refSortear.current(),
+      });
     } else if (pendientes.length > n) {
       setAviso({
         tipo: 'err',
@@ -206,15 +232,22 @@ export default function Equipos() {
     }
   }
 
+  // Siempre la versión más reciente de sortear (para reintentos tras resincronizar).
+  const refSortear = useRef<() => void>(() => {});
+  refSortear.current = () => void sortear();
+
   async function vaciar() {
+    setErrOp(null);
     setAccion('vaciar');
-    const { error } = await sb
-      .from('equipos')
-      .update({ grupo_id: null, pos_grupo: null })
-      .not('grupo_id', 'is', null);
+    const { error } = vigilar(
+      await sb.from('equipos').update({ grupo_id: null, pos_grupo: null }).not('grupo_id', 'is', null),
+    );
     if (error) {
       setAccion(null);
-      setAviso({ tipo: 'err', texto: `No se pudo vaciar el sorteo. (${error.message})` });
+      setErrOp({
+        texto: `No se pudo vaciar el sorteo. (${error.message})`,
+        reintentar: () => void vaciar(),
+      });
       return;
     }
     await cargar();
@@ -223,6 +256,7 @@ export default function Equipos() {
   }
 
   async function generarPartidos() {
+    setErrOp(null);
     setAccion('partidos');
 
     // Cada grupo debe tener exactamente 4 equipos (las 4 posiciones cubiertas)
@@ -239,16 +273,14 @@ export default function Equipos() {
     }
 
     // Idempotencia: si ya hay partidos de grupo, avisa y no toques nada
-    const { data: existentes, error: errorConsulta } = await sb
-      .from('partidos')
-      .select('id')
-      .eq('fase', 'grupo')
-      .limit(1);
+    const { data: existentes, error: errorConsulta } = vigilar(
+      await sb.from('partidos').select('id').eq('fase', 'grupo').limit(1),
+    );
     if (errorConsulta) {
       setAccion(null);
-      setAviso({
-        tipo: 'err',
-        texto: `No se pudo comprobar si ya hay partidos. (${errorConsulta.message})`,
+      setErrOp({
+        texto: `No se pudo comprobar si ya hay partidos; no se ha creado nada. (${errorConsulta.message})`,
+        reintentar: () => void generarPartidos(),
       });
       return;
     }
@@ -276,18 +308,21 @@ export default function Equipos() {
       });
     }
 
-    const { error } = await sb.from('partidos').insert(filas);
+    const { error } = vigilar(await sb.from('partidos').insert(filas));
     setAccion(null);
     if (error) {
-      setAviso({
-        tipo: 'err',
-        texto:
-          error.code === '23505'
-            ? 'Ya existían partidos de grupo: no se ha duplicado nada.'
-            : `No se pudieron crear los partidos. (${error.message})`,
-      });
+      if (error.code === '23505') {
+        setHayPartidos(true);
+        setAviso({ tipo: 'err', texto: 'Ya existían partidos de grupo: no se ha duplicado nada.' });
+      } else {
+        setErrOp({
+          texto: `No se pudieron crear los partidos. (${error.message})`,
+          reintentar: () => void generarPartidos(),
+        });
+      }
       return;
     }
+    setHayPartidos(true);
     setAviso({ tipo: 'ok', texto: `Creados los ${filas.length} partidos de la fase de grupos.` });
   }
 
@@ -449,21 +484,46 @@ export default function Equipos() {
         <p className="eq-count">
           <b>{gruposCompletos}/12</b> grupos completos
         </p>
-        <ConfirmButton
-          className="pc-btn primary block"
-          question="Crear los 72 partidos de la fase de grupos (6 por grupo)."
-          disabled={gruposCompletos !== NUM_GRUPOS || accion !== null}
-          busy={accion === 'partidos'}
-          busyLabel="Creando…"
-          onConfirm={() => void generarPartidos()}
-        >
-          Generar partidos de grupo
-        </ConfirmButton>
+        {!hayPartidos ? (
+          <ConfirmButton
+            className="pc-btn primary block"
+            question="Crear los 72 partidos de la fase de grupos (6 por grupo)."
+            disabled={gruposCompletos !== NUM_GRUPOS || accion !== null}
+            busy={accion === 'partidos'}
+            busyLabel="Creando…"
+            onConfirm={() => void generarPartidos()}
+          >
+            Generar partidos de grupo
+          </ConfirmButton>
+        ) : (
+          <>
+            {/* Para cuando se cambia a alguien de grupo DESPUÉS de generar:
+                borra los 72 (y la eliminatoria si existiera) y los recrea
+                con las asignaciones actuales. */}
+            <BotonRegenerar
+              etiqueta="Regenerar partidos de grupo"
+              fases={['grupo', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final']}
+              resumen={(info) =>
+                `${textoBorrado(info, ['grupo', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final'])} Después se volverán a crear los 72 partidos de grupos con las asignaciones actuales. ¿Seguir?`
+              }
+              onRegenerar={async () => {
+                await generarPartidos();
+                await cargar();
+              }}
+              disabled={gruposCompletos !== NUM_GRUPOS || accion !== null}
+            />
+            <p className="pc-hint">
+              Los 72 partidos ya existen. Regenerar sirve si has cambiado a alguien de grupo
+              después de generarlos.
+            </p>
+          </>
+        )}
         {gruposCompletos !== NUM_GRUPOS && (
           <p className="pc-hint">Se activa cuando los 12 grupos tengan sus 4 equipos.</p>
         )}
       </div>
 
+      <ErrorPersistente err={errOp} onDescartar={() => setErrOp(null)} />
       <Toast aviso={aviso} />
     </>
   );

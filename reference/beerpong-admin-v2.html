@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beerpong IV · Panel admin v2 (simulador)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F2EE;--panel:#FFFFFF;--panel2:#FBF9F6;
+  --bdc:#E5DFD7;--bd2:#D8D0C5;
+  --tx:#231B16;--tx2:#786E64;--tx3:#A79C8F;
+  --or:#ec3a2c;--orD:#b3251a;--orBg:#FDECEA;
+  --li:#3F7D33;--liBg:#E7F1E0;
+  --am:#B3730E;--amBg:#FBEEDA;
+  --pk:#B23F63;
+  --mo:'Space Mono',monospace;--bdf:'Space Grotesk',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#15100f;font-family:var(--bdf);color:var(--tx);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px 12px 40px;gap:14px}
+
+/* ---------- simulador ---------- */
+.sim{width:100%;max-width:412px;color:#f7efe2}
+.sim-t{font-family:var(--mo);font-size:10px;letter-spacing:2px;color:#8d7d74;text-transform:uppercase}
+.sim-bar{display:flex;align-items:center;gap:8px;margin-top:8px}
+.sim-btn{flex:none;width:40px;height:40px;border-radius:11px;border:1px solid #3a2c28;background:#241c1a;
+  color:#f7efe2;font-size:17px;cursor:pointer}
+.sim-btn:disabled{opacity:.3;cursor:default}
+.sim-now{flex:1;background:#241c1a;border:1px solid #3a2c28;border-radius:11px;padding:8px 12px;min-width:0}
+.sim-step{font-family:var(--mo);font-size:9px;letter-spacing:1px;color:#8d7d74}
+.sim-lbl{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.sim-track{display:flex;gap:3px;margin-top:9px}
+.sim-track i{flex:1;height:3px;border-radius:2px;background:#3a2c28}
+.sim-track i.on{background:var(--or)}
+
+/* ---------- teléfono ---------- */
+.phone{width:100%;max-width:412px;background:var(--bg);border-radius:26px;overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid #2a211f;display:flex;flex-direction:column;
+  min-height:730px}
+.ios{display:flex;justify-content:space-between;align-items:center;padding:9px 20px 3px;
+  font-family:var(--mo);font-size:11px;color:var(--tx2)}
+
+/* barra de estado del torneo (fija arriba) */
+.hdr{padding:8px 16px 12px;border-bottom:1px solid var(--bdc);background:var(--panel)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hdr-fase{font-family:var(--mo);font-size:10px;letter-spacing:1.5px;color:var(--tx3);text-transform:uppercase}
+.hdr-h{font-size:16px;font-weight:700;margin-top:2px;line-height:1.2}
+.hdr-clock{font-family:var(--mo);font-size:15px;font-weight:700;color:var(--tx);flex:none;text-align:right}
+.hdr-clock span{display:block;font-size:8px;letter-spacing:1px;color:var(--tx3);font-weight:400}
+.hdr-prog{height:4px;border-radius:3px;background:var(--bdc);margin-top:10px;overflow:hidden}
+.hdr-prog i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--or),var(--pk))}
+.hdr-sub{font-family:var(--mo);font-size:9.5px;color:var(--tx3);margin-top:6px;letter-spacing:.5px}
+
+.body{flex:1;padding:14px 16px 20px;overflow-y:auto}
+
+/* tarjeta de acción principal */
+.act{border-radius:16px;padding:16px;margin-bottom:14px;border:2px solid var(--or);background:var(--orBg)}
+.act-l{font-family:var(--mo);font-size:9.5px;letter-spacing:1.5px;color:var(--orD);text-transform:uppercase;
+  display:flex;align-items:center;gap:6px}
+.act-l .d{width:6px;height:6px;border-radius:50%;background:var(--or);animation:bk 1.2s infinite}
+@keyframes bk{50%{opacity:.25}}
+.act-h{font-size:19px;font-weight:700;line-height:1.25;margin:7px 0 4px}
+.act-p{font-size:12.5px;color:var(--tx2);line-height:1.45;margin-bottom:13px}
+.act-btn{width:100%;height:50px;border:none;border-radius:12px;background:var(--or);color:#fff;
+  font-family:var(--bdf);font-size:16px;font-weight:700;cursor:pointer}
+.act-btn:active{transform:scale(.99)}
+.act-btn.dark{background:var(--tx)}
+.act-btn.pk{background:var(--pk)}
+.act-btn:disabled{background:var(--bd2);color:#fff;cursor:default}
+.act-2{width:100%;height:40px;margin-top:8px;border:1px solid var(--bd2);border-radius:11px;background:transparent;
+  font-family:var(--bdf);font-size:13px;font-weight:600;color:var(--tx);cursor:pointer}
+
+/* aviso calmado (sin acción urgente) */
+.calm{border:1px solid var(--bdc);background:var(--panel);border-radius:16px;padding:15px;margin-bottom:14px}
+.calm .l{font-family:var(--mo);font-size:9.5px;letter-spacing:1.5px;color:var(--tx3);text-transform:uppercase}
+.calm .h{font-size:16px;font-weight:700;margin:6px 0 3px}
+.calm .p{font-size:12.5px;color:var(--tx2);line-height:1.45}
+
+.sec{font-family:var(--mo);font-size:9.5px;letter-spacing:1.5px;color:var(--tx3);text-transform:uppercase;
+  margin:16px 2px 9px;display:flex;align-items:center;justify-content:space-between}
+
+/* fila de partido */
+.row{display:flex;align-items:center;gap:10px;padding:12px 13px;border:1px solid var(--bdc);
+  border-radius:12px;margin-bottom:8px;background:var(--panel)}
+.row.pend{border-style:dashed;background:var(--panel2)}
+.row .mesa{font-family:var(--mo);font-size:9px;font-weight:700;color:var(--tx2);background:var(--bg);
+  border:1px solid var(--bdc);border-radius:7px;padding:5px 7px;flex:none;text-align:center;line-height:1.2}
+.row .mesa b{display:block;font-size:13px;color:var(--tx)}
+.row .nm{flex:1;min-width:0;font-size:13.5px;line-height:1.35}
+.row .nm .a{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm .b{color:var(--tx2);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .sc{font-family:var(--mo);font-weight:700;font-size:15px;flex:none}
+.row .go{flex:none;border:none;border-radius:10px;background:var(--tx);color:#fff;font-family:var(--bdf);
+  font-weight:700;font-size:12.5px;padding:10px 13px;cursor:pointer}
+.row .win{font-family:var(--mo);font-size:9px;color:var(--li);background:var(--liBg);padding:4px 8px;
+  border-radius:6px;flex:none;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.live{border:2px solid var(--am);background:#FFFCF6}
+.row .livetag{font-family:var(--mo);font-size:8.5px;letter-spacing:1px;color:var(--am);flex:none}
+
+/* editor de resultado */
+.edit{border:2px solid var(--or);border-radius:14px;padding:14px;margin-bottom:12px;background:#FFFAF9}
+.edit-l{font-family:var(--mo);font-size:9.5px;letter-spacing:1px;color:var(--orD);margin-bottom:11px;
+  display:flex;align-items:center;justify-content:space-between}
+.erow{display:flex;align-items:center;gap:8px;padding:11px;border-radius:11px;margin-bottom:8px;
+  background:var(--panel);border:1px solid var(--bdc)}
+.erow.lead{background:var(--liBg);border-color:#CFE6C2}
+.erow .en{flex:1;font-size:14px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.erow.lead .en{color:var(--li)}
+.stp{display:flex;align-items:center;gap:7px;flex:none}
+.sb{width:40px;height:40px;border-radius:11px;border:1px solid var(--bd2);background:#fff;font-size:20px;
+  cursor:pointer;color:var(--tx);line-height:1}
+.sb:active{transform:scale(.94)}
+.sv{width:30px;text-align:center;font-family:var(--mo);font-size:20px;font-weight:700}
+.esave{width:100%;height:46px;border:none;border-radius:11px;background:var(--tx);color:#fff;font-weight:700;
+  font-size:14px;cursor:pointer;font-family:var(--bdf);margin-top:2px}
+.esave:disabled{background:var(--bd2);cursor:default}
+.ecancel{width:100%;height:36px;margin-top:7px;border:none;background:none;color:var(--tx3);font-size:12.5px;
+  font-family:var(--bdf);cursor:pointer;text-decoration:underline}
+.ehint{font-size:11px;color:var(--tx3);text-align:center;margin-top:9px;line-height:1.4}
+
+/* cruces borrador */
+.cross{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--bdc);
+  border-radius:11px;margin-bottom:7px;background:var(--panel)}
+.cross .n{font-family:var(--mo);font-size:10px;color:var(--tx3);width:16px;flex:none}
+.cross .t{flex:1;min-width:0;font-size:12.5px;line-height:1.4}
+.cross .t b{font-weight:600}
+.cross .t .vs{color:var(--tx3);font-size:10px;margin:0 4px}
+.cross .sw{flex:none;width:34px;height:34px;border-radius:9px;border:1px solid var(--bd2);background:#fff;
+  cursor:pointer;font-size:14px;color:var(--tx2)}
+.seed{font-family:var(--mo);font-size:9px;color:var(--tx3)}
+
+/* hora / cuenta atrás */
+.hour{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.hour .lb{font-size:12.5px;color:var(--tx2);flex:1}
+.hour .hb{width:38px;height:38px;border-radius:10px;border:1px solid var(--bd2);background:#fff;font-size:16px;cursor:pointer}
+.hour .hv{font-family:var(--mo);font-size:20px;font-weight:700;width:64px;text-align:center}
+.count{text-align:center;padding:16px 0 8px}
+.count .cv{font-family:var(--mo);font-size:44px;font-weight:700;letter-spacing:1px;line-height:1}
+.count .cl{font-family:var(--mo);font-size:9.5px;letter-spacing:1.5px;color:var(--tx3);margin-top:6px}
+
+/* directo semis/final */
+.live-card{background:var(--panel);border:2px solid var(--pk);border-radius:16px;padding:16px;margin-bottom:12px}
+.live-b{display:flex;align-items:center;gap:7px;font-family:var(--mo);font-size:10px;letter-spacing:1px;
+  color:var(--pk);margin-bottom:14px}
+.live-b .d{width:7px;height:7px;border-radius:50%;background:var(--pk);animation:bk 1s infinite}
+.lt{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0}
+.lt+.lt{border-top:1px solid var(--bdc)}
+.lt .ln{font-size:15px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lt.lead .ln{color:var(--li)}
+.lsb{width:52px;height:52px;border-radius:14px;border:1px solid var(--bd2);background:#fff;font-size:24px;cursor:pointer;line-height:1}
+.lsv{width:42px;text-align:center;font-family:var(--mo);font-size:30px;font-weight:700}
+.seal{width:100%;height:50px;border:none;border-radius:12px;background:var(--pk);color:#fff;font-weight:700;
+  font-size:15px;cursor:pointer;margin-top:10px;font-family:var(--bdf)}
+.seal:disabled{background:var(--bd2);cursor:default}
+
+.champ{background:linear-gradient(135deg,#FFF1EE,#FBE8ED);border:2px solid var(--or);border-radius:16px;
+  padding:26px 18px;text-align:center}
+.champ .cl{font-family:var(--mo);font-size:10px;letter-spacing:2px;color:var(--orD);margin-bottom:9px}
+.champ .cv{font-size:25px;font-weight:700;line-height:1.2}
+.champ .cs{font-family:var(--mo);font-size:11px;color:var(--tx2);margin-top:10px}
+
+/* pie: acceso a lo demás */
+.more{margin-top:18px;border-top:1px solid var(--bdc);padding-top:12px;display:flex;gap:7px;flex-wrap:wrap}
+.more a{font-family:var(--mo);font-size:10px;letter-spacing:.5px;color:var(--tx2);border:1px solid var(--bdc);
+  border-radius:20px;padding:7px 11px;text-decoration:none;background:var(--panel)}
+.more a.danger{color:var(--pk);border-color:#EBD3DB}
+
+.note{font-size:11.5px;color:var(--tx3);line-height:1.5;margin-top:10px}
+.pill{font-family:var(--mo);font-size:9.5px;letter-spacing:.5px;padding:4px 9px;border-radius:20px;flex:none}
+.pill.ok{background:var(--liBg);color:var(--li)}
+.pill.pend{background:var(--panel2);color:var(--tx3);border:1px solid var(--bdc)}
+.pill.live{background:var(--amBg);color:var(--am)}
+.legend{max-width:412px;width:100%;color:#8d7d74;font-size:11.5px;line-height:1.6;font-family:var(--bdf)}
+.legend b{color:#f7efe2}
+</style>
+</head>
+<body>
+
+<div class="sim">
+  <div class="sim-t">Simulador · la noche entera</div>
+  <div class="sim-bar">
+    <button class="sim-btn" id="prev">‹</button>
+    <div class="sim-now">
+      <div class="sim-step" id="stepn">PASO 1 / 14</div>
+      <div class="sim-lbl" id="steplbl">—</div>
+    </div>
+    <button class="sim-btn" id="next">›</button>
+  </div>
+  <div class="sim-track" id="track"></div>
+</div>
+
+<div class="phone">
+  <div class="ios"><span id="ios-t">19:12</span><span>▮▮▮ ▮ 82%</span></div>
+  <div class="hdr">
+    <div class="hdr-top">
+      <div style="min-width:0">
+        <div class="hdr-fase" id="h-fase">FASE DE GRUPOS</div>
+        <div class="hdr-h" id="h-title">—</div>
+      </div>
+      <div class="hdr-clock" id="h-clock"><span>HORA</span>19:12</div>
+    </div>
+    <div class="hdr-prog"><i id="h-prog" style="width:0%"></i></div>
+    <div class="hdr-sub" id="h-sub">—</div>
+  </div>
+  <div class="body" id="screen"></div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<script>
+var T = {
+  a:'Las supervivientes', b:'Cerveza y tapa', c:'De la A a la B', d:'Los prigos',
+  e:'Los Minguitos', f:'Wachiturros', g:'Garrival', h:'Resacón en las mesas',
+  i:'Pin&Pon', j:'Tostados y crudos 2', k:'Alca & Guidú', l:'Los Bolinches'
+};
+
+var SC = [
+/* 1 */ {
+  lbl:'Llegas · equipos ya colocados', ios:'18:40',
+  fase:'ANTES DE EMPEZAR', title:'48 equipos, 12 grupos', clock:'18:40', prog:0,
+  sub:'GRUPOS A–L COMPLETOS · PARTIDOS SIN GENERAR',
+  html:`
+  <div class="act">
+    <div class="act-l"><span class="d"></span>Siguiente paso</div>
+    <div class="act-h">Generar los partidos de grupo</div>
+    <div class="act-p">Se crearán los 6 cruces de cada grupo (72 en total). Los equipos ya están colocados a mano.</div>
+    <button class="act-btn">Generar 72 partidos</button>
+  </div>
+  <div class="sec">Estado del sorteo</div>
+  <div class="row"><span class="mesa">GR<b>12</b></span><span class="nm"><span class="a">12 grupos con 4 equipos</span><span class="b">A–F turno 1 · G–L turno 2</span></span><span class="pill ok">✓ LISTO</span></div>
+  <div class="row"><span class="mesa">EQ<b>48</b></span><span class="nm"><span class="a">48 equipos asignados</span><span class="b">44 pagados · 4 pendientes de cobro</span></span><span class="pill live">4 €</span></div>
+  <p class="note">La porra de grupos lleva abierta desde el día 3. Se cerrará sola cuando inicies el Turno 1.</p>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 2 */ {
+  lbl:'Arrancas el Turno 1 (cierra la porra de grupos)', ios:'19:28',
+  fase:'FASE DE GRUPOS', title:'Turno 1 listo para empezar', clock:'19:28', prog:0,
+  sub:'0 / 72 RESULTADOS · 6 MESAS LIBRES',
+  html:`
+  <div class="act">
+    <div class="act-l"><span class="d"></span>Siguiente paso</div>
+    <div class="act-h">Iniciar Turno 1 · grupos A–F</div>
+    <div class="act-p">Se abren las 6 mesas. <b>Esto cierra la porra de grupos</b> y ya nadie podrá apostar los ganadores de grupo.</div>
+    <button class="act-btn">Iniciar Turno 1</button>
+    <button class="act-2">Dar 5 minutos más de porra</button>
+  </div>
+  <div class="calm">
+    <div class="l">Porra de grupos</div>
+    <div class="h">137 apuestas</div>
+    <div class="p">De 41 participantes. Al iniciar el turno se cierran todas.</div>
+  </div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 3 */ {
+  lbl:'Turno 1 en marcha · pantalla de trabajo', ios:'19:41',
+  fase:'FASE DE GRUPOS · TURNO 1', title:'Metiendo resultados', clock:'19:41', prog:11,
+  sub:'8 / 72 RESULTADOS · 4 MESAS JUGANDO',
+  html:`
+  <div class="calm">
+    <div class="l">Ahora mismo</div>
+    <div class="h">Mete resultados según acaben</div>
+    <div class="p">Da igual el orden. La clasificación se recalcula sola con cada resultado.</div>
+  </div>
+  <div class="sec"><span>Esperando resultado</span><span style="font-family:var(--mo);color:var(--tx3)">4</span></div>
+  ${row(1,T.a,T.b,'A')}${row(2,T.e,T.f,'B')}${row(3,T.i,T.j,'C')}${row(4,T.c,T.d,'A')}
+  <div class="sec"><span>Mesas libres</span><span style="font-family:var(--mo);color:var(--tx3)">2</span></div>
+  <div class="row pend"><span class="mesa">MESA<b>5</b></span><span class="nm"><span class="a">Grupo D · cruce 3</span><span class="b">Llama a los equipos</span></span><span class="pill pend">LIBRE</span></div>
+  <div class="row pend"><span class="mesa">MESA<b>6</b></span><span class="nm"><span class="a">Grupo E · cruce 3</span><span class="b">Llama a los equipos</span></span><span class="pill pend">LIBRE</span></div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 4 */ {
+  lbl:'Metes un resultado (3 toques)', ios:'19:43', live:true,
+  fase:'FASE DE GRUPOS · TURNO 1', title:'Mesa 1 · Grupo A', clock:'19:43', prog:11,
+  sub:'8 / 72 RESULTADOS',
+  html:`
+  <div class="edit">
+    <div class="edit-l"><span>MESA 1 · GRUPO A</span><span>CRUCE 1 DE 6</span></div>
+    <div class="erow lead" id="r0"><span class="en">${T.a}</span><div class="stp">
+      <button class="sb" onclick="stp(0,-1)">−</button><span class="sv" id="v0">10</span><button class="sb" onclick="stp(0,1)">+</button></div></div>
+    <div class="erow" id="r1"><span class="en">${T.b}</span><div class="stp">
+      <button class="sb" onclick="stp(1,-1)">−</button><span class="sv" id="v1">6</span><button class="sb" onclick="stp(1,1)">+</button></div></div>
+    <button class="esave" id="save">Guardar · gana ${T.a}</button>
+    <button class="ecancel">Cancelar</button>
+    <p class="ehint">El ganador tiene que estar en 10 exactos. Si te equivocas, luego puedes corregirlo desde la fila.</p>
+  </div>
+  <div class="sec">Siguiente en esta mesa</div>
+  <div class="row pend"><span class="mesa">MESA<b>1</b></span><span class="nm"><span class="a">${T.c}</span><span class="b">${T.d}</span></span><span class="pill pend">EN COLA</span></div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 5 */ {
+  lbl:'Corriges un resultado mal metido', ios:'19:58',
+  fase:'FASE DE GRUPOS · TURNO 1', title:'Corregir resultado', clock:'19:58', prog:25,
+  sub:'18 / 72 RESULTADOS',
+  html:`
+  <div class="edit" style="border-color:var(--pk);background:#FFF9FB">
+    <div class="edit-l" style="color:var(--pk)"><span>CORRIGIENDO · MESA 3</span><span>GRUPO C</span></div>
+    <div class="erow"><span class="en">${T.i}</span><div class="stp">
+      <button class="sb">−</button><span class="sv">6</span><button class="sb">+</button></div></div>
+    <div class="erow lead"><span class="en">${T.j}</span><div class="stp">
+      <button class="sb">−</button><span class="sv">10</span><button class="sb">+</button></div></div>
+    <div style="background:#FFF;border:1px solid #EBD3DB;border-radius:10px;padding:11px;margin:10px 0 4px">
+      <div style="font-family:var(--mo);font-size:9px;letter-spacing:1px;color:var(--pk);margin-bottom:5px">VAS A CAMBIAR</div>
+      <div style="font-size:13px;line-height:1.5">10–6 &nbsp;→&nbsp; <b>6–10</b><br>
+      <span style="color:var(--tx2)">El ganador pasa de ${T.i} a <b style="color:var(--tx)">${T.j}</b>.</span></div>
+    </div>
+    <button class="esave" style="background:var(--pk)">Sí, corregir</button>
+    <button class="ecancel">Dejarlo como estaba</button>
+  </div>
+  <p class="note">Cualquier resultado se puede corregir desde su fila, en cualquier momento. Si la ronda siguiente ya está generada, te avisa antes.</p>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 6 */ {
+  lbl:'Turno 1 completo → arrancas el 2', ios:'20:31',
+  fase:'FASE DE GRUPOS', title:'Turno 1 cerrado', clock:'20:31', prog:50,
+  sub:'36 / 72 RESULTADOS · GRUPOS A–F COMPLETOS',
+  html:`
+  <div class="act">
+    <div class="act-l"><span class="d"></span>Siguiente paso</div>
+    <div class="act-h">Iniciar Turno 2 · grupos G–L</div>
+    <div class="act-p">Los 6 grupos del turno 1 están cerrados. Las 6 mesas quedan libres para el segundo turno.</div>
+    <button class="act-btn">Iniciar Turno 2</button>
+  </div>
+  <div class="sec">Turno 1 · resumen</div>
+  <div class="row"><span class="mesa">GR<b>A</b></span><span class="nm"><span class="a">${T.a}</span><span class="b">1º · 9 pts · +14</span></span><span class="pill ok">✓ 6/6</span></div>
+  <div class="row"><span class="mesa">GR<b>B</b></span><span class="nm"><span class="a">${T.e}</span><span class="b">1º · 9 pts · +11</span></span><span class="pill ok">✓ 6/6</span></div>
+  <div class="row"><span class="mesa">GR<b>C</b></span><span class="nm"><span class="a">${T.j}</span><span class="b">1º · 6 pts · +7</span></span><span class="pill ok">✓ 6/6</span></div>
+  <p class="note">D, E y F también cerrados. Puedes revisarlos en la pestaña Grupos.</p>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 7 */ {
+  lbl:'12 grupos cerrados · cena', ios:'21:34',
+  fase:'FASE DE GRUPOS', title:'Los 12 grupos, cerrados', clock:'21:34', prog:100,
+  sub:'72 / 72 RESULTADOS · CLASIFICACIÓN SELLADA',
+  html:`
+  <div class="act">
+    <div class="act-l"><span class="d"></span>Siguiente paso</div>
+    <div class="act-h">Generar dieciseisavos</div>
+    <div class="act-p">Se calculan los 32 clasificados (12 primeros, 12 segundos y los 8 mejores terceros) y se emparejan por ranking. <b>Nadie lo verá hasta que confirmes.</b></div>
+    <button class="act-btn">Generar cuadro</button>
+  </div>
+  <div class="calm">
+    <div class="l">Mejores terceros · sellado</div>
+    <div class="h">8 de 12 pasan</div>
+    <div class="p">Corte en +2 de diferencia. ${T.c} y ${T.k} entran por vasos a favor.</div>
+  </div>
+  <p class="note">Tienes hasta las 22:30. Aprovecha la cena para dejarlo todo listo.</p>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 8 */ {
+  lbl:'Cuadro en borrador · intercambias cruces', ios:'21:47',
+  fase:'DIECISEISAVOS', title:'Cuadro en borrador', clock:'21:47', prog:0,
+  sub:'SOLO LO VES TÚ · 16 CRUCES',
+  html:`
+  <div class="calm" style="border-color:var(--am);background:#FFFCF6">
+    <div class="l" style="color:var(--am)">Borrador · el público no lo ve</div>
+    <div class="h">Revisa y cambia lo que quieras</div>
+    <div class="p">Toca ⇄ en dos cruces para intercambiar equipos. Cuando confirmes, se hace público y se abre la porra.</div>
+  </div>
+  <div class="sec"><span>Cruces</span><span class="seed">SEMILLA · RANKING</span></div>
+  ${cross(1,T.a,1,T.d,32)}
+  ${cross(2,T.e,2,T.l,31)}
+  ${cross(3,T.j,3,T.c,30,true)}
+  ${cross(4,T.f,4,T.k,29)}
+  <p class="note" style="margin-bottom:12px">+ 12 cruces más ↓</p>
+  <div class="act">
+    <div class="act-l">Al confirmar</div>
+    <div class="act-h">Abrir la porra hasta…</div>
+    <div class="hour">
+      <span class="lb">Empieza la primera tanda</span>
+      <button class="hb">−</button><span class="hv">22:30</span><button class="hb">+</button>
+    </div>
+    <button class="act-btn">Confirmar cruces y abrir porra</button>
+    <button class="act-2">Regenerar cuadro desde cero</button>
+  </div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 9 */ {
+  lbl:'Porra abierta · cuenta atrás', ios:'22:23',
+  fase:'DIECISEISAVOS', title:'Porra abierta', clock:'22:23', prog:0,
+  sub:'CUADRO PÚBLICO · 16 CRUCES POR APOSTAR',
+  html:`
+  <div class="act" style="border-color:var(--pk);background:#FFF9FB">
+    <div class="act-l" style="color:var(--pk)"><span class="d" style="background:var(--pk)"></span>La gente está apostando</div>
+    <div class="count">
+      <div class="cv" style="color:var(--pk)">06:41</div>
+      <div class="cl">PARA LAS 22:30</div>
+    </div>
+    <div class="act-p" style="text-align:center;margin-top:6px">El reloj es informativo. La porra de cada cruce se cierra cuando marques ese partido en juego.</div>
+    <button class="act-2" style="margin-top:0">Retrasar a las 22:40</button>
+  </div>
+  <div class="calm">
+    <div class="l">Entrando ahora</div>
+    <div class="h">312 apuestas · 78 personas</div>
+    <div class="p">+41 en el último minuto.</div>
+  </div>
+  <div class="sec">Cuando estés listo</div>
+  <button class="act-btn dark">Empezar tanda 1 · mesas 1–6</button>
+  <p class="note">Marcará los 6 cruces en juego de golpe y cerrará su porra.</p>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 10 */ {
+  lbl:'Dieciseisavos en juego', ios:'22:37',
+  fase:'DIECISEISAVOS', title:'Tanda 1 en juego', clock:'22:37', prog:19,
+  sub:'3 / 16 CRUCES · PORRA CERRADA EN TANDA 1',
+  html:`
+  <div class="sec"><span>Jugando ahora</span><span style="font-family:var(--mo);color:var(--am)">● 3 MESAS</span></div>
+  <div class="row live"><span class="mesa">MESA<b>1</b></span><span class="nm"><span class="a">${T.a}</span><span class="b">${T.d}</span></span><button class="go">Resultado</button></div>
+  <div class="row live"><span class="mesa">MESA<b>2</b></span><span class="nm"><span class="a">${T.e}</span><span class="b">${T.l}</span></span><button class="go">Resultado</button></div>
+  <div class="row live"><span class="mesa">MESA<b>3</b></span><span class="nm"><span class="a">${T.j}</span><span class="b">${T.c}</span></span><button class="go">Resultado</button></div>
+  <div class="sec">Ya jugados</div>
+  <div class="row"><span class="mesa">MESA<b>4</b></span><span class="nm"><span class="a">${T.f}</span><span class="b">${T.k}</span></span><span class="sc">10–7</span></div>
+  <div class="row"><span class="mesa">MESA<b>5</b></span><span class="nm"><span class="a">${T.g}</span><span class="b">${T.h}</span></span><span class="sc">10–4</span></div>
+  <div class="sec">Siguiente</div>
+  <div class="row pend"><span class="mesa">T<b>2</b></span><span class="nm"><span class="a">Tanda 2 · 6 cruces</span><span class="b">Se abre al liberarse las mesas</span></span><span class="pill pend">EN COLA</span></div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 11 */ {
+  lbl:'Octavos y cuartos · mismo bucle', ios:'23:12',
+  fase:'CUARTOS', title:'Cuartos en borrador', clock:'23:12', prog:0,
+  sub:'OCTAVOS CERRADOS · 4 CRUCES POR CONFIRMAR',
+  html:`
+  <div class="calm" style="border-color:var(--am);background:#FFFCF6">
+    <div class="l" style="color:var(--am)">Borrador · el público no lo ve</div>
+    <div class="h">Mismo bucle que antes</div>
+    <div class="p">Generar → revisar → confirmar → apostar → jugar. Cada ronda igual.</div>
+  </div>
+  <div class="sec">Cruces de cuartos</div>
+  ${cross(1,T.a,1,T.f,8)}
+  ${cross(2,T.e,2,T.g,7)}
+  ${cross(3,T.j,3,T.i,6)}
+  ${cross(4,T.b,4,T.k,5)}
+  <div class="act" style="margin-top:14px">
+    <div class="act-l">Al confirmar</div>
+    <div class="act-h">Abrir la porra hasta…</div>
+    <div class="hour">
+      <span class="lb">Empiezan los cuartos</span>
+      <button class="hb">−</button><span class="hv">23:20</span><button class="hb">+</button>
+    </div>
+    <button class="act-btn">Confirmar cruces y abrir porra</button>
+  </div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 12 */ {
+  lbl:'Semifinal en directo · tú al micro', ios:'23:38',
+  fase:'SEMIFINAL 1', title:'En directo', clock:'23:38', prog:60,
+  sub:'CADA TOQUE SE VE EN 500 MÓVILES',
+  html:`
+  <div class="live-card">
+    <div class="live-b"><span class="d"></span>EN DIRECTO · SEMIFINAL 1</div>
+    <div class="lt lead"><span class="ln">${T.a}</span><div class="stp">
+      <button class="lsb">−</button><span class="lsv">8</span><button class="lsb">+</button></div></div>
+    <div class="lt"><span class="ln">${T.j}</span><div class="stp">
+      <button class="lsb">−</button><span class="lsv">6</span><button class="lsb">+</button></div></div>
+    <button class="seal" disabled>Sellar · falta llegar a 10</button>
+  </div>
+  <p class="note">Botones grandes a propósito: aquí estarás también con el micro. Nada más en pantalla.</p>
+  <div class="sec">Después</div>
+  <div class="row pend"><span class="mesa">SF<b>2</b></span><span class="nm"><span class="a">${T.e}</span><span class="b">${T.f}</span></span><span class="pill pend">EN COLA</span></div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 13 */ {
+  lbl:'La final', ios:'23:54',
+  fase:'FINAL', title:'En directo', clock:'23:54', prog:90,
+  sub:'MATCH POINT · 500 PERSONAS MIRANDO',
+  html:`
+  <div class="live-card" style="border-color:var(--or)">
+    <div class="live-b" style="color:var(--orD)"><span class="d" style="background:var(--or)"></span>EN DIRECTO · FINAL</div>
+    <div class="lt lead"><span class="ln">${T.a}</span><div class="stp">
+      <button class="lsb">−</button><span class="lsv">9</span><button class="lsb">+</button></div></div>
+    <div class="lt"><span class="ln">${T.e}</span><div class="stp">
+      <button class="lsb">−</button><span class="lsv">8</span><button class="lsb">+</button></div></div>
+    <button class="seal" disabled>Sellar · falta llegar a 10</button>
+  </div>
+  <div class="calm">
+    <div class="l">Porra</div>
+    <div class="h">El Profeta se decide aquí</div>
+    <div class="p">Quique_23 y María Heredia empatados a 71. Uno apostó a cada equipo.</div>
+  </div>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+},
+/* 14 */ {
+  lbl:'Campeón · se acabó', ios:'23:59',
+  fase:'TORNEO TERMINADO', title:'¡Campeón!', clock:'23:59', prog:100,
+  sub:'72 + 31 PARTIDOS · 0 INCIDENCIAS',
+  html:`
+  <div class="champ">
+    <div class="cl">CAMPEÓN BEERPONG IV</div>
+    <div class="cv">🏆 ${T.a}</div>
+    <div class="cs">10–8 en la final · 7 partidos ganados</div>
+  </div>
+  <div class="calm" style="margin-top:14px">
+    <div class="l">Porra</div>
+    <div class="h">El Profeta: Quique_23</div>
+    <div class="p">81 puntos. Se lleva 5 copas.</div>
+  </div>
+  <div class="sec">Y ahora</div>
+  <button class="act-btn dark">Ver resumen de la noche</button>
+  <p class="note">Estadísticas, camino del campeón y todo lo que ha pasado. Para soltarlo en el grupo mañana.</p>
+  <div class="more"><a href="#">Equipos</a><a href="#">Grupos</a><a href="#">Cuadro</a><a href="#">Porra</a><a href="#" class="danger">Avanzado</a></div>`
+}
+];
+
+function row(mesa,a,b,g){
+  return `<div class="row"><span class="mesa">MESA<b>${mesa}</b></span><span class="nm"><span class="a">${a}</span><span class="b">${b}</span></span><button class="go">Resultado</button></div>`;
+}
+function cross(n,a,sa,b,sb,hi){
+  return `<div class="cross"${hi?' style="border-color:var(--or);background:#FFFAF9"':''}>
+    <span class="n">${n}</span>
+    <span class="t"><b>${a}</b> <span class="seed">(${sa})</span><span class="vs">vs</span><b>${b}</b> <span class="seed">(${sb})</span></span>
+    <button class="sw">⇄</button></div>`;
+}
+
+var vals=[10,6];
+function stp(i,d){
+  vals[i]=Math.max(0,Math.min(10,vals[i]+d));
+  document.getElementById('v'+i).textContent=vals[i];
+  document.getElementById('r0').classList.toggle('lead',vals[0]>vals[1]);
+  document.getElementById('r1').classList.toggle('lead',vals[1]>vals[0]);
+  var s=document.getElementById('save'), ok=(vals[0]===10)!==(vals[1]===10);
+  s.disabled=!ok;
+  s.textContent= ok ? ('Guardar · gana '+(vals[0]>vals[1]?T.a:T.b)) : 'El ganador debe estar en 10';
+}
+
+var idx=0;
+var LEG=[
+ 'Llegas al pabellón. Los equipos ya los colocaste el día 3 y la porra de grupos lleva días abierta. El panel te dice lo único que falta: crear los partidos.',
+ 'Antes de arrancar, te avisa de lo irreversible: iniciar el turno cierra la porra de grupos. Y te ofrece la salida por si la gente aún está apostando.',
+ 'La pantalla de trabajo. Solo lo que puedes hacer ahora: mesas jugando arriba, mesas libres abajo. Sin pestañas ni ruido.',
+ 'Meter un resultado son tres toques. El que va ganando se resalta solo, y el botón no deja guardar si el marcador no es válido. <b>Prueba a tocar los + y −.</b>',
+ 'Te equivocaste al teclear. Se corrige desde la fila del partido, y antes de guardar te dice en cristiano qué va a cambiar.',
+ 'Turno 1 cerrado. La app ya te empuja al siguiente paso sin que tengas que acordarte.',
+ 'Los 12 grupos cerrados, en plena cena. Genera el cuadro con calma: es lo único que necesitas hacer ahora.',
+ 'El cuadro sale por ranking pero <b>en borrador</b>: solo lo ves tú. Cambias lo que quieras con ⇄ y pones la hora del contador.',
+ 'Confirmado. El público ya ve el cuadro y la cuenta atrás corre en 500 móviles. El reloj mete presión, pero el que manda sigues siendo tú.',
+ 'Bucle de la eliminatoria: marcar en juego cierra la porra de esos cruces, y vas metiendo resultados según acaban las mesas.',
+ 'Octavos y cuartos son el mismo bucle. Generar → revisar → confirmar → jugar. Ya no tienes que pensar.',
+ 'Semis: aquí el marcador se escribe en vivo. Botones enormes porque estarás también al micro. Nada más en pantalla que estorbe.',
+ 'La final. Todo el pabellón mirando y tú tocando dos botones.',
+ 'Sellas y sale el campeón. La porra se cierra sola y ya tienes el resumen para soltarlo mañana en el grupo.'
+];
+
+function render(){
+  var s=SC[idx];
+  document.getElementById('stepn').textContent='PASO '+(idx+1)+' / '+SC.length;
+  document.getElementById('steplbl').textContent=s.lbl;
+  document.getElementById('ios-t').textContent=s.ios;
+  document.getElementById('h-fase').textContent=s.fase;
+  document.getElementById('h-title').textContent=s.title;
+  document.getElementById('h-clock').innerHTML='<span>HORA</span>'+s.clock;
+  document.getElementById('h-prog').style.width=s.prog+'%';
+  document.getElementById('h-sub').textContent=s.sub;
+  document.getElementById('screen').innerHTML=s.html;
+  document.getElementById('screen').scrollTop=0;
+  document.getElementById('legend').innerHTML=LEG[idx];
+  document.getElementById('prev').disabled=(idx===0);
+  document.getElementById('next').disabled=(idx===SC.length-1);
+  var t='';for(var i=0;i<SC.length;i++){t+='<i class="'+(i<=idx?'on':'')+'"></i>';}
+  document.getElementById('track').innerHTML=t;
+  if(idx===3){vals=[10,6];}
+}
+document.getElementById('prev').onclick=function(){if(idx>0){idx--;render();}};
+document.getElementById('next').onclick=function(){if(idx<SC.length-1){idx++;render();}};
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'&&idx<SC.length-1){idx++;render();}
+  if(e.key==='ArrowLeft'&&idx>0){idx--;render();}
+});
+render();
+</script>
+</body>
+</html>

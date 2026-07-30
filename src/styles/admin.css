@@ -827,6 +827,506 @@ button.pc-pill:disabled {
   min-height: 42px;
 }
 
+/* ==== pestaña «Ahora» (cabina de mando; clases del mockup admin-v2) ==== */
+
+/* cabecera de estado del torneo, pegada arriba al hacer scroll */
+.pc-nhdr {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--panel);
+  border: 1px solid var(--bdc);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.pc-nhdr .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pc-nhdr .f {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--tx3);
+  text-transform: uppercase;
+}
+.pc-nhdr .h {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+.pc-nhdr .clock {
+  font-family: var(--mo);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tx);
+  flex: none;
+  text-align: right;
+}
+.pc-nhdr .clock span {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--tx3);
+  font-weight: 400;
+}
+.pc-nhdr .prog {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--bdc);
+  margin-top: 10px;
+  overflow: hidden;
+}
+.pc-nhdr .prog i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--or), var(--pk));
+}
+.pc-nhdr .sub {
+  font-family: var(--mo);
+  font-size: 9.5px;
+  color: var(--tx3);
+  margin-top: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* tarjeta de acción principal (roja) y su variante rosa (porra) */
+.pc-act {
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  border: 2px solid var(--or);
+  background: #fdecea;
+}
+.pc-act.pk {
+  border-color: var(--pk);
+  background: #fff9fb;
+}
+.pc-act-l {
+  font-family: var(--mo);
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  color: var(--orD);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pc-act-l.pk {
+  color: var(--pk);
+}
+.pc-act-l .d {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--or);
+  animation: pcblink 1.2s infinite;
+  flex: none;
+}
+.pc-act-l.pk .d {
+  background: var(--pk);
+}
+.pc-act-h {
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 7px 0 4px;
+}
+.pc-act-p {
+  font-size: 12.5px;
+  color: var(--tx2);
+  line-height: 1.45;
+  margin-bottom: 13px;
+}
+.pc-act-btn {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  border: none;
+  border-radius: 12px;
+  background: var(--or);
+  color: #fff;
+  font-family: var(--bdf);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pc-act-btn:active {
+  transform: scale(0.99);
+}
+.pc-act-btn.dark {
+  background: var(--tx);
+  margin-bottom: 8px;
+}
+.pc-act-btn.pk {
+  background: var(--pk);
+}
+.pc-act-btn:disabled {
+  background: var(--bd2);
+  color: #fff;
+  cursor: default;
+  transform: none;
+}
+
+/* aviso calmado (sin urgencia) + variante ámbar de borrador */
+.pc-calm {
+  border: 1px solid var(--bdc);
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 15px;
+  margin-bottom: 14px;
+}
+.pc-calm.ambar {
+  border-color: var(--am);
+  background: #fffcf6;
+}
+.pc-calm .l {
+  font-family: var(--mo);
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  color: var(--tx3);
+  text-transform: uppercase;
+}
+.pc-calm.ambar .l {
+  color: var(--am);
+}
+.pc-calm .h {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 6px 0 3px;
+}
+.pc-calm .p {
+  font-size: 12.5px;
+  color: var(--tx2);
+  line-height: 1.45;
+}
+
+/* cabecera de sección de lista */
+.pc-sec {
+  font-family: var(--mo);
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  color: var(--tx3);
+  text-transform: uppercase;
+  margin: 16px 2px 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pc-sec .mono {
+  font-family: var(--mo);
+  color: var(--tx3);
+}
+.pc-sec .mono.am {
+  color: var(--am);
+}
+.pc-sec .seed {
+  font-family: var(--mo);
+  font-size: 9px;
+  color: var(--tx3);
+  letter-spacing: 0.5px;
+}
+
+/* chip de mesa + fila viva + botón Resultado (lista de trabajo) */
+.pc-mchip {
+  font-family: var(--mo);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--tx2);
+  background: var(--bg);
+  border: 1px solid var(--bdc);
+  border-radius: 7px;
+  padding: 5px 7px;
+  flex: none;
+  text-align: center;
+  line-height: 1.2;
+}
+.pc-mchip b {
+  display: block;
+  font-size: 13px;
+  color: var(--tx);
+}
+.pc-row.live {
+  border: 2px solid var(--am);
+  background: #fffcf6;
+}
+.pc-go {
+  flex: none;
+  border: none;
+  border-radius: 10px;
+  background: var(--tx);
+  color: #fff;
+  font-family: var(--bdf);
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 10px 13px;
+  cursor: pointer;
+}
+.pc-go:active {
+  transform: scale(0.97);
+}
+
+/* cruces en borrador (revisión) */
+.pc-cross {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--bdc);
+  border-radius: 11px;
+  margin-bottom: 7px;
+  background: var(--panel);
+}
+.pc-cross.sel {
+  border-color: var(--or);
+  background: #fffaf9;
+}
+.pc-cross .n {
+  font-family: var(--mo);
+  font-size: 10px;
+  color: var(--tx3);
+  width: 16px;
+  flex: none;
+}
+.pc-cross .t {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.pc-cross .t b {
+  font-weight: 600;
+}
+.pc-cross .t .vs {
+  color: var(--tx3);
+  font-size: 10px;
+  margin: 0 4px;
+}
+.pc-cross .sw {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid var(--bd2);
+  background: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--tx2);
+}
+.pc-cross.sel .sw {
+  border-color: var(--or);
+  color: var(--orD);
+  background: #fff3eb;
+}
+.pc-cross .sw:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.seed {
+  font-family: var(--mo);
+  font-size: 9px;
+  color: var(--tx3);
+}
+
+/* selector / retraso de hora */
+.pc-hour {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+.pc-hour .lb {
+  font-size: 12.5px;
+  color: var(--tx2);
+  flex: 1;
+  line-height: 1.4;
+}
+.pc-hour .hb {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--bd2);
+  background: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: var(--bdf);
+  color: var(--tx);
+  flex: none;
+}
+.pc-hour .hb.ancho {
+  width: 52px;
+  font-family: var(--mo);
+  font-size: 13px;
+  font-weight: 700;
+}
+.pc-hour .hb:active {
+  transform: scale(0.95);
+}
+.pc-hour .hb:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+.pc-hour .hv {
+  font-family: var(--mo);
+  font-size: 20px;
+  font-weight: 700;
+  width: 64px;
+  text-align: center;
+  flex: none;
+}
+
+/* cuenta atrás (tarjeta rosa de porra abierta) */
+.pc-count {
+  text-align: center;
+  padding: 12px 0 8px;
+}
+.pc-count .cv {
+  font-family: var(--mo);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: var(--pk);
+}
+.pc-count .cl {
+  font-family: var(--mo);
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  color: var(--tx3);
+  margin-top: 6px;
+}
+
+/* pie: acceso al resto del panel */
+.pc-more {
+  margin-top: 18px;
+  border-top: 1px solid var(--bdc);
+  padding-top: 12px;
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.pc-more button {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--tx2);
+  border: 1px solid var(--bdc);
+  border-radius: 20px;
+  padding: 8px 12px;
+  background: var(--panel);
+  cursor: pointer;
+}
+.pc-more button.danger {
+  color: var(--pk);
+  border-color: #ebd3db;
+}
+
+/* campeón: subtítulo (marcador de la final) */
+.pc-champ .cs {
+  font-family: var(--mo);
+  font-size: 11px;
+  color: var(--tx2);
+  margin-top: 10px;
+}
+
+/* aviso fijo de sin conexión (cabecera): se queda hasta que una petición vaya bien */
+.pc-offline {
+  position: sticky;
+  top: 8px;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--orD);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 20px rgba(179, 37, 26, 0.35);
+}
+
+/* botón discreto de corrección en filas jugadas */
+.pc-corr {
+  background: none;
+  border: 1px solid var(--bd2);
+  color: var(--tx2);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: var(--bdf);
+  cursor: pointer;
+  flex: none;
+  white-space: nowrap;
+}
+.pc-corr:active {
+  transform: scale(0.96);
+}
+.pc-corr:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+/* salir de una tarjeta (corrección / cancelar en juego) sin tocar nada */
+.pc-salir {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  background: none;
+  border: 1px solid var(--bd2);
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--tx2);
+  cursor: pointer;
+  font-family: var(--bdf);
+}
+.pc-salir:active {
+  transform: scale(0.99);
+}
+.pc-salir:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+/* error persistente de escritura, con Reintentar (no se descarta solo) */
+.pc-errop {
+  border: 2px solid var(--orD);
+  background: #fdeceb;
+  border-radius: 12px;
+  padding: 13px;
+  margin: 10px 0;
+}
+.pc-errop p {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--orD);
+  line-height: 1.5;
+  margin-bottom: 11px;
+}
+.pc-errop.fija {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: min(448px, calc(100vw - 32px));
+  margin: 0;
+  z-index: 65;
+  box-shadow: 0 8px 28px rgba(35, 27, 22, 0.3);
+}
+
 /* toast flotante */
 .pc-toast {
   position: fixed;
@@ -863,7 +1363,8 @@ button.pc-pill:disabled {
   .pc-wrap--elim {
     max-width: 1100px;
   }
-  .pc-wrap--semis {
+  .pc-wrap--semis,
+  .pc-wrap--ahora {
     max-width: 600px;
   }
 
@@ -881,7 +1382,8 @@ button.pc-pill:disabled {
   .pc-wrap--equipos .eq-block > .eq-count,
   .pc-wrap--equipos .eq-block > .pc-hint,
   .pc-wrap--equipos .eq-block > .pc-btn,
-  .pc-wrap--equipos .eq-block > .pc-confirm {
+  .pc-wrap--equipos .eq-block > .pc-confirm,
+  .pc-wrap--equipos .eq-block > .pc-errop {
     grid-column: 1 / -1;
   }
   .pc-wrap--equipos .eq-block > .pc-row {
