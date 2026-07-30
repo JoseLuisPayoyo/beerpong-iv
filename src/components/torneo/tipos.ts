@@ -30,6 +30,7 @@ export interface Partido {
   vasos_b: number | null;
   ganador_id: Id | null;
   estado: 'pendiente' | 'en_juego' | 'jugado';
+  publicado: boolean; // aquí siempre true: los borradores se filtran al cargar
   mesa: number | null;
   tanda: number | null;
 }
@@ -40,6 +41,8 @@ export interface EquipoPub {
   nombre_equipo: string;
   grupo_id: number | null;
   pos_grupo: number | null;
+  participante_1: string | null;
+  participante_2: string | null;
 }
 
 // Nombres de fase de la porra (fases.nombre). Ojo: la fase de porra 'grupos'
@@ -56,6 +59,7 @@ export interface FaseRow {
   nombre: string;
   orden: number;
   porra_abierta: boolean;
+  hora_inicio: string | null; // ISO; objetivo de la cuenta atrás (informativa)
   puntos: number | null;
 }
 

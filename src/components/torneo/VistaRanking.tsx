@@ -33,8 +33,7 @@ export default function VistaRanking({
       <div className="prize">
         <div className="pl">PREMIO DEL PROFETA</div>
         <div className="pt">
-          El nº1 se lleva <b>bonocopas toda la noche</b> + su nombre en la Pantalla Grande + plaza
-          guardada para la V.
+          El nº1 se lleva <b>5 copas</b>.
         </div>
       </div>
 

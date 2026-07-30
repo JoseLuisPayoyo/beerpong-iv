@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Grupo, Partido, EquipoPub, FaseRow, FasePorra, PickGuardado, Id } from './tipos';
 import { type Sesion, guardarSesion, borrarSesion } from './sesion';
+import { horaCorta, useRestante } from './CuentaAtras';
+import { horaDeFase } from '../../lib/horarios';
 
 // La porra: alta con mote+PIN y picks por fase. Las escrituras van a
 // /api/porra/* (secret key en servidor); aquí solo se pinta y se manda
@@ -39,6 +41,7 @@ export default function VistaPorra({
   partidos,
   equipos,
   fases,
+  desfase,
   sesion,
   onSesion,
 }: {
@@ -46,6 +49,7 @@ export default function VistaPorra({
   partidos: Partido[];
   equipos: EquipoPub[];
   fases: FaseRow[];
+  desfase: number; // reloj servidor − reloj móvil (ms), para la cuenta atrás
   sesion: Sesion | null;
   onSesion: (s: Sesion | null) => void;
 }) {
@@ -135,7 +139,8 @@ export default function VistaPorra({
   }, [faseSel, estados]);
 
   const faseAbierta = estados.get(fase) === 'abierta';
-  const puntos = fases.find((f) => f.nombre === fase)?.puntos ?? null;
+  const faseRow = fases.find((f) => f.nombre === fase) ?? null;
+  const puntos = faseRow?.puntos ?? null;
   const chipActivo = CHIPS.find((c) => c.fase === fase) ?? CHIPS[0];
 
   const gruposOrden = useMemo(() => [...grupos].sort((a, b) => a.id - b.id), [grupos]);
@@ -312,12 +317,16 @@ export default function VistaPorra({
         })}
       </div>
 
+      {faseAbierta && faseRow?.hora_inicio && (
+        <TarjetaCuenta horaInicio={faseRow.hora_inicio} desfase={desfase} />
+      )}
+
       {faseAbierta ? (
         <div className="led blink">
           <span className="dot" />
           {fase === 'grupos'
-            ? 'ABIERTA · CIERRA AL EMPEZAR LOS GRUPOS'
-            : 'ABIERTA · CADA CRUCE CIERRA AL EMPEZAR'}
+            ? `ABIERTA · LOS GRUPOS EMPIEZAN A LAS ${horaDeFase('grupos', fases)}`
+            : `ABIERTA · A LAS ${horaDeFase(fase, fases)} · CIERRA POR CRUCE`}
         </div>
       ) : (
         <div className="led am">
@@ -395,6 +404,19 @@ export default function VistaPorra({
         </button>
       )}
     </section>
+  );
+}
+
+// Tarjeta de cuenta atrás sobre las apuestas. El reloj es informativo: cada
+// cruce cierra cuando el admin lo marca en juego, no al llegar a cero.
+function TarjetaCuenta({ horaInicio, desfase }: { horaInicio: string; desfase: number }) {
+  const restante = useRestante(horaInicio, desfase);
+  if (!restante) return null;
+  return (
+    <div className="cdcard">
+      <div className="cv">{restante}</div>
+      <div className="cl">LA PORRA CIERRA · EMPEZAMOS A LAS {horaCorta(horaInicio)}</div>
+    </div>
   );
 }
 

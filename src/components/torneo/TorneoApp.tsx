@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Grupo, Partido, EquipoPub, FaseRow, RankingRow } from './tipos';
 import { type Sesion, leerSesion } from './sesion';
+import { calcularDesfase, faseConCuenta, horaCorta, useRestante } from './CuentaAtras';
+import { HORARIOS } from '../../lib/horarios';
 import VistaPorra from './VistaPorra';
 import VistaRanking from './VistaRanking';
 import VistaGrupos from './VistaGrupos';
@@ -10,6 +12,8 @@ import VistaCuadro from './VistaCuadro';
 type Tab = 'porra' | 'ranking' | 'grupos' | 'cuadro';
 type Estado = 'cargando' | 'listo' | 'error';
 
+const TABS_VALIDAS: readonly Tab[] = ['porra', 'ranking', 'grupos', 'cuadro'];
+
 export default function TorneoApp() {
   const [estado, setEstado] = useState<Estado>('cargando');
   const [grupos, setGrupos] = useState<Grupo[]>([]);
@@ -17,9 +21,48 @@ export default function TorneoApp() {
   const [equipos, setEquipos] = useState<EquipoPub[]>([]);
   const [fases, setFases] = useState<FaseRow[]>([]);
   const [ranking, setRanking] = useState<RankingRow[]>([]);
-  // La porra es el gancho: es la pestaña de entrada (como el mockup).
-  const [tab, setTab] = useState<Tab>('porra');
+  // La porra es el gancho: es la pestaña de entrada, salvo que la URL traiga
+  // ?tab= (los enlaces de la landing entran directos a su pestaña).
+  const [tab, setTab] = useState<Tab>(() => {
+    const t = new URLSearchParams(window.location.search).get('tab');
+    return (TABS_VALIDAS as readonly string[]).includes(t ?? '') ? (t as Tab) : 'porra';
+  });
   const [sesion, setSesion] = useState<Sesion | null>(() => leerSesion());
+
+  // Cambiar de pestaña refleja la URL (History API, sin recargar): los enlaces
+  // compartidos llevan a la pestaña que se estaba viendo.
+  const cambiarTab = useCallback((t: Tab) => {
+    setTab(t);
+    const u = new URL(window.location.href);
+    u.searchParams.set('tab', t);
+    history.replaceState(null, '', u);
+  }, []);
+  // Desfase reloj servidor − reloj móvil, calculado UNA vez al cargar: la
+  // cuenta atrás corre en local sobre él (móviles con la hora mal puesta).
+  const [desfase, setDesfase] = useState(0);
+
+  useEffect(() => {
+    void calcularDesfase().then(setDesfase);
+  }, []);
+
+  // Mantiene fresca la caché del modo evento que usa la landing para redirigir
+  // sin parpadeo: si el admin lo apaga, la siguiente visita a / ya no redirige.
+  useEffect(() => {
+    if (!supabase) return;
+    void supabase
+      .from('config')
+      .select('modo_evento')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) return;
+        try {
+          localStorage.setItem('bp4-modo-evento', data.modo_evento ? '1' : '0');
+        } catch {
+          /* almacenamiento bloqueado: da igual */
+        }
+      });
+  }, []);
 
   const cargar = useCallback(async () => {
     if (!supabase) {
@@ -28,14 +71,18 @@ export default function TorneoApp() {
     }
     const [g, p, e, f] = await Promise.all([
       supabase.from('grupos').select('id,letra,turno,estado,ganador_id').order('id'),
+      // Solo partidos publicados: los borradores no existen para el público.
       supabase
         .from('partidos')
         .select(
-          'id,fase,grupo_id,orden,equipo_a,equipo_b,vasos_a,vasos_b,ganador_id,estado,mesa,tanda',
-        ),
+          'id,fase,grupo_id,orden,equipo_a,equipo_b,vasos_a,vasos_b,ganador_id,estado,publicado,mesa,tanda',
+        )
+        .eq('publicado', true),
       // vista pública SIN teléfonos; la tabla privada `equipos` no se lee
-      supabase.from('equipos_publicos').select('id,nombre_equipo,grupo_id,pos_grupo'),
-      supabase.from('fases').select('nombre,orden,porra_abierta,puntos').order('orden'),
+      supabase
+        .from('equipos_publicos')
+        .select('id,nombre_equipo,grupo_id,pos_grupo,participante_1,participante_2'),
+      supabase.from('fases').select('nombre,orden,porra_abierta,hora_inicio,puntos').order('orden'),
     ]);
     if (g.error || p.error || e.error || f.error) {
       setEstado('error');
@@ -134,6 +181,9 @@ export default function TorneoApp() {
     return (jugados / partidos.length) * 100;
   }, [partidos]);
 
+  // Fase con porra abierta y cuenta atrás en marcha (para la cabecera).
+  const faseCuenta = faseConCuenta(fases, desfase);
+
   return (
     <div className="app">
       {/* Con sesión de porra: TUS PUNTOS (de tu fila del ranking) + barra de
@@ -150,6 +200,13 @@ export default function TorneoApp() {
             </div>
           )}
         </div>
+        {/* contexto para quien aterriza aquí con el modo evento: qué es, cuándo y dónde */}
+        <div className="evinfo">
+          6 AGO · POLIDEPORTIVO · CABRA DEL SANTO CRISTO · APERTURA {HORARIOS.apertura}
+        </div>
+        {faseCuenta && faseCuenta.hora_inicio && (
+          <LineaCuenta horaInicio={faseCuenta.hora_inicio} desfase={desfase} />
+        )}
         {sesion && (
           <div className="prog">
             <i style={{ width: `${avance}%` }} />
@@ -176,6 +233,7 @@ export default function TorneoApp() {
           </div>
         ) : (
           <>
+            <AvisosTorneo />
             {/* La porra se queda montada (oculta) al cambiar de pestaña: así
                 no se pierden las selecciones aún sin confirmar. */}
             <div style={{ display: tab === 'porra' ? undefined : 'none' }}>
@@ -184,14 +242,15 @@ export default function TorneoApp() {
                 partidos={partidos}
                 equipos={equipos}
                 fases={fases}
+                desfase={desfase}
                 sesion={sesion}
                 onSesion={setSesion}
               />
             </div>
             {tab === 'grupos' ? (
-              <VistaGrupos grupos={grupos} partidos={partidos} equipos={equipos} />
+              <VistaGrupos grupos={grupos} partidos={partidos} equipos={equipos} fases={fases} />
             ) : tab === 'cuadro' ? (
-              <VistaCuadro partidos={partidos} equipos={equipos} />
+              <VistaCuadro partidos={partidos} equipos={equipos} fases={fases} />
             ) : tab === 'ranking' ? (
               <VistaRanking ranking={ranking} sesion={sesion} />
             ) : null}
@@ -200,33 +259,72 @@ export default function TorneoApp() {
       </div>
 
       <nav className="nav">
-        <NavBtn tab="porra" actual={tab} onClick={setTab} label="Porra">
+        <NavBtn tab="porra" actual={tab} onClick={cambiarTab} label="Porra">
           <svg viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="9" />
             <circle cx="12" cy="12" r="4.5" />
             <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
           </svg>
         </NavBtn>
-        <NavBtn tab="ranking" actual={tab} onClick={setTab} label="Ranking">
+        <NavBtn tab="ranking" actual={tab} onClick={cambiarTab} label="Ranking">
           <svg viewBox="0 0 24 24">
             <path d="M7 4h10v4a5 5 0 0 1-10 0V4z" />
             <path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" />
             <path d="M12 13v3M9 20h6M10 16h4" />
           </svg>
         </NavBtn>
-        <NavBtn tab="grupos" actual={tab} onClick={setTab} label="Grupos">
+        <NavBtn tab="grupos" actual={tab} onClick={cambiarTab} label="Grupos">
           <svg viewBox="0 0 24 24">
             <rect x="4" y="5" width="16" height="3.5" rx="1" />
             <rect x="4" y="10.2" width="16" height="3.5" rx="1" />
             <rect x="4" y="15.5" width="16" height="3.5" rx="1" />
           </svg>
         </NavBtn>
-        <NavBtn tab="cuadro" actual={tab} onClick={setTab} label="Cuadro">
+        <NavBtn tab="cuadro" actual={tab} onClick={cambiarTab} label="Cuadro">
           <svg viewBox="0 0 24 24">
             <path d="M5 5v4h6M5 15v4h6M11 7h4v10h-4M15 12h4" />
           </svg>
         </NavBtn>
       </nav>
+    </div>
+  );
+}
+
+// Avisos públicos: bloque plegable, cerrado por defecto. Contexto, no protagonista.
+function AvisosTorneo() {
+  return (
+    <details className="avisos">
+      <summary>INFO DEL TORNEO · NORMAS</summary>
+      <div className="av">
+        <div className="avt">PLAZAS COMPLETAS</div>
+        <p>
+          Las 48 plazas están cubiertas. Puedes apuntarte a la{' '}
+          <a href="/?landing=1#inscripcion">lista de espera</a>: si se cae algún equipo, avisamos
+          por orden.
+        </p>
+      </div>
+      <div className="av">
+        <div className="avt">EQUIPOS DE MENORES</div>
+        <p>
+          Beerpong IV es un torneo con alcohol. Si hay equipos en lista de espera con los dos
+          miembros mayores de edad, estos tienen preferencia sobre los equipos con algún miembro
+          menor: se sortearán tantos equipos de menores como plazas hagan falta para dar entrada a
+          los adultos que esperan. El sorteo se hará antes del sorteo de grupos, el 3 de agosto.
+        </p>
+      </div>
+    </details>
+  );
+}
+
+// Línea de cuenta atrás de la cabecera. Informativa: al llegar a cero se
+// esconde sola; nada se cierra automáticamente.
+function LineaCuenta({ horaInicio, desfase }: { horaInicio: string; desfase: number }) {
+  const restante = useRestante(horaInicio, desfase);
+  if (!restante) return null;
+  return (
+    <div className="hd-cd">
+      <span className="dot" />
+      LA PORRA CIERRA EN {restante} · EMPEZAMOS A LAS {horaCorta(horaInicio)}
     </div>
   );
 }

@@ -107,6 +107,112 @@ body::before {
   color: var(--mu);
   margin-bottom: 2px;
 }
+/* contexto del evento en la cabecera (modo evento: aquí aterriza todo el mundo) */
+.evinfo {
+  font-family: var(--mo);
+  font-size: 9px;
+  letter-spacing: 1px;
+  line-height: 1.6;
+  color: var(--mu);
+  margin-top: 7px;
+}
+
+/* avisos públicos: plegable, cerrado por defecto */
+.avisos {
+  border: 1px solid var(--ln);
+  border-radius: 12px;
+  background: var(--bg2);
+  margin-bottom: 14px;
+}
+.avisos summary {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--mu2);
+  padding: 11px 13px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.avisos summary::-webkit-details-marker {
+  display: none;
+}
+.avisos summary::after {
+  content: '+';
+  font-family: var(--mo);
+  color: var(--mu);
+  font-size: 13px;
+}
+.avisos[open] summary::after {
+  content: '−';
+}
+.avisos .av {
+  padding: 0 13px 13px;
+}
+.avisos .avt {
+  font-family: var(--mo);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--am);
+  margin-bottom: 5px;
+}
+.avisos .av p {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--mu2);
+}
+.avisos .av a {
+  color: var(--li);
+  text-decoration: underline;
+}
+
+/* cuenta atrás de la porra en la cabecera (informativa) */
+.hd-cd {
+  font-family: var(--mo);
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  color: var(--pk);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+.hd-cd .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+  animation: bl 1.1s infinite;
+}
+
+/* tarjeta de cuenta atrás en la pestaña Porra */
+.cdcard {
+  border: 1px solid rgba(255, 63, 139, 0.4);
+  background: rgba(255, 63, 139, 0.08);
+  border-radius: 14px;
+  text-align: center;
+  padding: 14px 12px 12px;
+  margin: 0 0 14px;
+}
+.cdcard .cv {
+  font-family: var(--mo);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: var(--pk);
+}
+.cdcard .cl {
+  font-family: var(--mo);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--mu);
+  margin-top: 7px;
+}
+
 .prog {
   height: 3px;
   border-radius: 2px;
@@ -295,6 +401,11 @@ body::before {
 .gchip .bd.pl {
   background: var(--am);
   animation: bl 1.1s infinite;
+}
+/* los 12 grupos a la vista: dos filas en móvil, nada de scroll escondido */
+.chips.g2 {
+  flex-wrap: wrap;
+  overflow-x: visible;
 }
 
 /* porra matches */
@@ -665,6 +776,17 @@ body::before {
   margin-top: 2px;
   color: var(--mu);
 }
+/* jugadores del equipo («Nombre1 · Nombre2»): mono, apagado, con elipsis */
+.np {
+  font-family: var(--mo);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: var(--mu);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .trow .st {
   width: 24px;
   text-align: center;
@@ -768,6 +890,11 @@ body::before {
   color: var(--li);
   font-size: 11px;
 }
+/* ventana horaria de la ronda (src/lib/horarios.ts) */
+.rnd .rh {
+  color: var(--mu);
+  letter-spacing: 1px;
+}
 .bm {
   background: var(--bg2);
   border: 1px solid var(--ln);
@@ -832,6 +959,62 @@ body::before {
 .bl .bn.tbd {
   font-style: italic;
   color: var(--mu);
+}
+/* variante de línea con dos pisos (equipo + jugadores) para los partidos de grupo */
+.bl .bn2 {
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+}
+.bl .bn2 .bnn {
+  font-family: var(--bd);
+  font-size: 13px;
+  color: var(--mu);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bl.w .bn2 .bnn {
+  color: var(--or);
+}
+.bl.live .bn2 .bnn {
+  color: var(--cr);
+}
+.bl .bs.am {
+  color: var(--am);
+}
+/* título de la lista de partidos del grupo */
+.gpart {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  color: var(--or);
+  margin: 20px 0 4px;
+}
+/* etiqueta de honestidad: el horario es previsto, no una promesa */
+.gaviso {
+  font-family: var(--mo);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--mu);
+  margin-bottom: 10px;
+}
+/* cruce de grupo con hora prevista delante */
+.bm.conh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bm .bhora {
+  font-family: var(--mo);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+  flex: none;
+}
+.bm .bmc {
+  flex: 1;
+  min-width: 0;
 }
 .champ {
   background: linear-gradient(135deg, rgba(236, 58, 44, 0.15), rgba(255, 63, 139, 0.12));

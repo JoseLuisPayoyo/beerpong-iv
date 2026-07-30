@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Id } from '../../lib/clasificacion';
-import type { Fase, Partido, EquipoPub } from './tipos';
+import { horaDeFase } from '../../lib/horarios';
+import type { Fase, Partido, EquipoPub, FaseRow } from './tipos';
 
 const RONDAS: { fase: Fase; label: string }[] = [
   { fase: 'dieciseisavos', label: 'DIECISEISAVOS' },
@@ -13,9 +14,11 @@ const RONDAS: { fase: Fase; label: string }[] = [
 export default function VistaCuadro({
   partidos,
   equipos,
+  fases,
 }: {
   partidos: Partido[];
   equipos: EquipoPub[];
+  fases: FaseRow[];
 }) {
   const nombre = useMemo(() => {
     const m = new Map<Id, string>();
@@ -70,10 +73,14 @@ export default function VistaCuadro({
 
       {rondasConPartidos.map((r) => {
         const completa = r.matches.every((m) => m.estado === 'jugado');
+        // Ventana de la fase (hora real del admin si está fijada); las rondas
+        // ya cerradas no necesitan hora.
+        const hora = completa ? null : horaDeFase(r.fase, fases);
         return (
           <div key={r.fase}>
             <div className="rnd">
               {r.label}
+              {hora && <span className="rh">· {hora}</span>}
               {completa && <span className="ck">✓</span>}
               <span className="l" />
             </div>
