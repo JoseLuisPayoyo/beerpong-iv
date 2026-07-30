@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { json, leerBody, clienteServidor, verificarParticipante } from './_utils';
+import { json, leerBody, clienteServidor, logError, verificarParticipante } from './_utils';
 
 // On-demand (SSR): necesita la secret key en el servidor.
 export const prerender = false;
@@ -33,6 +33,7 @@ export const POST: APIRoute = async ({ request }) => {
     .select('fase,grupo_id,partido_id,pick_equipo_id')
     .eq('participante_id', participante.id);
   if (error) {
+    logError('mis-picks: leer apuestas', error);
     return json({ error: 'No hemos podido cargar tus apuestas. Inténtalo más tarde.' }, 500);
   }
 

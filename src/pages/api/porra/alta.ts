@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import bcrypt from 'bcryptjs';
-import { json, leerBody, clienteServidor, moteValido, pinValido, escaparIlike } from './_utils';
+import { json, leerBody, clienteServidor, logError, moteValido, pinValido, escaparIlike } from './_utils';
 
 // On-demand (SSR): necesita la secret key en el servidor.
 export const prerender = false;
@@ -35,6 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
     .ilike('mote', escaparIlike(mote))
     .maybeSingle();
   if (e0) {
+    logError('alta: comprobar mote', e0);
     return json({ error: 'No hemos podido comprobar el mote. Inténtalo más tarde.' }, 500);
   }
   if (existente) {
@@ -51,6 +52,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (error.code === '23505') {
       return json({ error: 'Ese mote ya está pillado, elige otro.' }, 409);
     }
+    logError('alta: crear participante', error);
     return json({ error: 'No hemos podido crear el mote. Inténtalo más tarde.' }, 500);
   }
 

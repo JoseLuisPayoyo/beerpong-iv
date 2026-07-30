@@ -1,14 +1,17 @@
 import type { APIRoute } from 'astro';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { json, leerBody, clienteServidor, verificarParticipante } from './_utils';
+import { json, leerBody, clienteServidor, logError, verificarParticipante } from './_utils';
 
 // On-demand (SSR): necesita la secret key en el servidor.
 export const prerender = false;
 
 // Guardar/cambiar picks de una fase. El cliente miente: aquí se revalida TODO
 // (PIN, fase abierta, pertenencia del equipo al grupo/cruce, cruce pendiente).
-// Upsert sobre los unique (participante_id, grupo_id) / (participante_id,
-// partido_id): se puede cambiar el pick mientras siga abierto.
+// Se guarda con borrar-e-insertar, NO con upsert: los índices únicos de
+// `apuestas` son PARCIALES (`where partido_id is not null` / `where grupo_id
+// is not null`) y el ON CONFLICT (cols) que genera supabase-js no puede
+// casarlos (42P10). Se borran solo los picks que se van a sustituir y se
+// insertan los nuevos; se puede cambiar el pick mientras siga abierto.
 
 const FASES_ELIMINATORIA = ['dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final'];
 
@@ -59,6 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
     .eq('nombre', fase)
     .maybeSingle();
   if (eFase) {
+    logError('picks: comprobar fase', eFase);
     return json({ error: 'No hemos podido comprobar la fase. Inténtalo más tarde.' }, 500);
   }
   if (!faseRow) {
@@ -74,9 +78,24 @@ export const POST: APIRoute = async ({ request }) => {
       : await validarPicksEliminatoria(sb, participante.id, fase, picks);
   if (filas instanceof Response) return filas;
 
-  const onConflict = fase === 'grupos' ? 'participante_id,grupo_id' : 'participante_id,partido_id';
-  const { error: eUpsert } = await sb.from('apuestas').upsert(filas, { onConflict });
-  if (eUpsert) {
+  // 1) fuera los picks previos de ESTAS claves (no toda la fase: en la
+  //    eliminatoria, un pick guardado sobre un cruce ya cerrado no viene en la
+  //    petición y debe sobrevivir).
+  let borrado = sb.from('apuestas').delete().eq('participante_id', participante.id).eq('fase', fase);
+  borrado =
+    fase === 'grupos'
+      ? borrado.in('grupo_id', filas.map((f) => f.grupo_id))
+      : borrado.in('partido_id', filas.map((f) => f.partido_id));
+  const { error: eBorra } = await borrado;
+  if (eBorra) {
+    logError('picks: borrar apuestas previas', eBorra);
+    return json({ error: 'No hemos podido guardar la apuesta. Inténtalo más tarde.' }, 500);
+  }
+
+  // 2) dentro los nuevos (validados y deduplicados arriba)
+  const { error: eInserta } = await sb.from('apuestas').insert(filas);
+  if (eInserta) {
+    logError('picks: insertar apuestas', eInserta);
     return json({ error: 'No hemos podido guardar la apuesta. Inténtalo más tarde.' }, 500);
   }
 
@@ -92,6 +111,7 @@ async function validarPicksGrupos(
   // Solo id y grupo_id: los teléfonos de `equipos` no salen del servidor.
   const { data: equipos, error } = await sb.from('equipos').select('id,grupo_id');
   if (error || !equipos) {
+    logError('picks: leer equipos para validar (grupos)', error);
     return json({ error: 'No hemos podido validar la apuesta. Inténtalo más tarde.' }, 500);
   }
   const grupoDelEquipo = new Map(equipos.map((e) => [String(e.id), e.grupo_id as number | null]));
@@ -136,6 +156,7 @@ async function validarPicksEliminatoria(
     .select('id,estado,equipo_a,equipo_b')
     .eq('fase', fase);
   if (error || !partidos) {
+    logError('picks: leer partidos para validar (eliminatoria)', error);
     return json({ error: 'No hemos podido validar la apuesta. Inténtalo más tarde.' }, 500);
   }
   const porId = new Map(partidos.map((x) => [String(x.id), x]));

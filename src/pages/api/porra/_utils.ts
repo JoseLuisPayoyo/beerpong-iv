@@ -8,6 +8,21 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 
+// Deja constancia del error real de PostgREST en el log del servidor
+// (message, code, details, hint). Al cliente NUNCA le llegan estos detalles:
+// los endpoints siguen respondiendo su mensaje genérico.
+export function logError(donde: string, error: unknown): void {
+  const e = error as
+    | { message?: string; code?: string; details?: string | null; hint?: string | null }
+    | null;
+  console.error(`[porra] ${donde}:`, {
+    message: e?.message,
+    code: e?.code,
+    details: e?.details,
+    hint: e?.hint,
+  });
+}
+
 export function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -67,6 +82,9 @@ export async function verificarParticipante(
     .ilike('mote', escaparIlike(mote))
     .maybeSingle();
   if (error || !data) {
+    // Un error de BD acaba respondiendo el mismo 401 genérico que un mote
+    // inexistente: al menos que quede rastro en el servidor.
+    if (error) logError('verificarParticipante: buscar mote', error);
     await bcrypt.compare(pin, HASH_RELLENO);
     return null;
   }
