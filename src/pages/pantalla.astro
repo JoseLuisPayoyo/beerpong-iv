@@ -1,0 +1,30 @@
+---
+// Pantalla de proyector: se abre en el portátil, pantalla completa, y decide
+// sola qué mostrar toda la noche. Solo lectura (publishable key + RLS), sin
+// GSAP ni nada de la landing, y con noindex: esta URL no pinta nada en Google.
+import '@fontsource/anton';
+import '@fontsource/space-grotesk/400.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/600.css';
+import '@fontsource/space-grotesk/700.css';
+import '@fontsource/space-mono/400.css';
+import '@fontsource/space-mono/700.css';
+import '../styles/pantalla.css';
+import PantallaApp from '../components/pantalla/PantallaApp';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#170e11" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Beerpong IV · Pantalla</title>
+  </head>
+  <body>
+    <PantallaApp client:only="react" />
+  </body>
+</html>
