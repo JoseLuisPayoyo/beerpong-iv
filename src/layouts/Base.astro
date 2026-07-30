@@ -8,6 +8,11 @@ import '@fontsource/space-mono/700.css';
 import '../styles/tokens.css';
 import '../styles/global.css';
 import Analytics from '@vercel/analytics/astro';
+
+// Para el interruptor de «modo evento» (config.modo_evento): la landing sigue
+// siendo estática; la comprobación va en un script inline al principio del head.
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseKey = import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 ---
 
 <!doctype html>
@@ -15,6 +20,37 @@ import Analytics from '@vercel/analytics/astro';
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script is:inline define:vars={{ supabaseUrl, supabaseKey }}>
+      // Modo evento: si config.modo_evento está activo, esta página redirige a
+      // /torneo. Sin SSR: caché en localStorage para redirigir ANTES de pintar
+      // en visitas repetidas, y comprobación en red (async, no bloquea el
+      // primer pintado) que actualiza la caché y redirige si toca.
+      // Escape: /?landing=1 no redirige nunca (la landing sigue viva ahí).
+      (function () {
+        try {
+          if (new URLSearchParams(location.search).get('landing') === '1') return;
+          if (localStorage.getItem('bp4-modo-evento') === '1') {
+            location.replace('/torneo');
+            return;
+          }
+          if (!supabaseUrl || !supabaseKey) return;
+          fetch(supabaseUrl + '/rest/v1/config?id=eq.1&select=modo_evento', {
+            headers: { apikey: supabaseKey, Authorization: 'Bearer ' + supabaseKey },
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (d) {
+              var on = Array.isArray(d) && d[0] && d[0].modo_evento === true;
+              try {
+                localStorage.setItem('bp4-modo-evento', on ? '1' : '0');
+              } catch (e) {}
+              if (on) location.replace('/torneo');
+            })
+            .catch(function () {});
+        } catch (e) {}
+      })();
+    </script>
     <meta
       name="description"
       content="IV edición del torneo de beer pong de Cabra del Santo Cristo. 6 de agosto en el Polideportivo: 48 equipos, 10€, DJs y fiesta hasta el amanecer."

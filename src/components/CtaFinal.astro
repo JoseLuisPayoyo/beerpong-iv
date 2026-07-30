@@ -10,6 +10,15 @@
       <p id="closeCopy">Solo 48 equipos. Cuando se llenan, se llenan. Rellena los datos y guardamos tu sitio.</p>
       <p class="close-reason" id="closeReason" hidden>Cada año se cae algún equipo. Si se libera una plaza, avisamos por orden de lista.</p>
       <p class="close-venue">📍 Polideportivo de Cabra del Santo Cristo (junto a la Plaza de los Nativos Ausentes)</p>
+      <aside class="aviso-menores">
+        <span class="am-t">EQUIPOS DE MENORES</span>
+        <p>
+          Beerpong IV es un torneo con alcohol. Si hay equipos en lista de espera con los dos
+          miembros mayores de edad, estos tienen preferencia sobre los equipos con algún miembro
+          menor: se sortearán tantos equipos de menores como plazas hagan falta para dar entrada a
+          los adultos que esperan. El sorteo se hará antes del sorteo de grupos, el 3 de agosto.
+        </p>
+      </aside>
     </div>
     <div class="form-wrap reveal">
       <form class="form" id="inscribir-form" novalidate>
@@ -229,6 +238,33 @@
     margin-top: 16px;
     color: var(--cream);
     opacity: 0.9;
+  }
+
+  /* aviso de menores: visible siempre, junto a la inscripción / lista de espera */
+  .aviso-menores {
+    max-width: 52ch;
+    margin-top: 22px;
+    padding: 14px 16px;
+    border: 1px solid rgba(246, 167, 44, 0.45);
+    border-radius: 12px;
+    background: rgba(246, 167, 44, 0.07);
+  }
+
+  .aviso-menores .am-t {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    color: var(--amber);
+    margin-bottom: 7px;
+  }
+
+  .aviso-menores p {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--cream);
+    opacity: 0.85;
+    margin: 0;
   }
 
   .form {

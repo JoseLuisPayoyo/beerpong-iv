@@ -2,11 +2,11 @@
 
 ---
 
-<section class="soon wrap" aria-label="Próximamente en esta web">
-  <p class="sec-head reveal">Muy pronto en esta web</p>
+<section class="soon wrap" aria-label="El torneo en directo en esta web">
+  <p class="sec-head reveal">Ya en esta web</p>
   <h2 class="h2 reveal">El día del torneo,<br />en directo aquí</h2>
   <div class="soon-row reveal">
-    <button class="soon-btn" type="button" disabled aria-disabled="true">
+    <a class="soon-btn" href="/torneo">
       <span class="soon-ico" aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 4h12v3a6 6 0 0 1-12 0V4Z"></path>
@@ -18,9 +18,9 @@
         </svg>
       </span>
       <span class="soon-label">Clasificación en directo</span>
-      <span class="soon-tag">Próximamente</span>
-    </button>
-    <button class="soon-btn" type="button" disabled aria-disabled="true">
+      <span class="soon-go" aria-hidden="true">→</span>
+    </a>
+    <a class="soon-btn" href="/torneo?tab=porra">
       <span class="soon-ico" aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4Z"></path>
@@ -30,8 +30,8 @@
         </svg>
       </span>
       <span class="soon-label">La porra</span>
-      <span class="soon-tag">Próximamente</span>
-    </button>
+      <span class="soon-go" aria-hidden="true">→</span>
+    </a>
   </div>
 </section>
 
@@ -63,30 +63,34 @@
     margin-top: 24px;
   }
 
+  /* enlaces reales con el rojo-líder de la marca */
   .soon-btn {
     flex: 1 1 240px;
     display: flex;
     align-items: center;
     gap: 12px;
     background: var(--panel);
-    border: 1px solid var(--line);
+    border: 1px solid var(--cup, #ec3a2c);
     border-radius: 14px;
     padding: 18px 20px;
     color: var(--cream);
     font-family: var(--sans);
     font-size: 16px;
     text-align: left;
-    cursor: not-allowed;
-    opacity: 0.85;
+    text-decoration: none;
+    transition:
+      background 0.2s,
+      transform 0.15s;
   }
 
-  .soon-btn:disabled {
-    pointer-events: none;
+  .soon-btn:hover {
+    background: rgba(236, 58, 44, 0.12);
+    transform: translateY(-1px);
   }
 
   .soon-ico {
     display: inline-flex;
-    color: var(--muted);
+    color: var(--cup, #ec3a2c);
     flex-shrink: 0;
   }
 
@@ -95,16 +99,19 @@
     flex: 1;
   }
 
-  .soon-tag {
+  .soon-go {
     font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--amber);
-    border: 1px solid rgba(246, 167, 44, 0.4);
-    border-radius: 999px;
-    padding: 4px 10px;
-    white-space: nowrap;
+    font-size: 18px;
+    color: var(--cup, #ec3a2c);
+    flex-shrink: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .soon-btn,
+    .soon-btn:hover {
+      transition: none;
+      transform: none;
+    }
   }
 
   @media (max-width: 560px) {

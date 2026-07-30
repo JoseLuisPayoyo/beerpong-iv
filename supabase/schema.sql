@@ -46,10 +46,19 @@ create table if not exists public.partidos (
   ganador_id  uuid references public.equipos(id),
   estado      text not null default 'pendiente'
                 check (estado in ('pendiente', 'en_juego', 'jugado')),
+  publicado   boolean not null default true,  -- false = borrador: el público no lo ve
   mesa        integer,
   tanda       integer,
   actualizado timestamptz not null default now(),
   unique (fase, grupo_id, orden)
+);
+
+-- ---------------------------------------------------------------------------
+-- config: interruptores globales (fila única, id=1). Lectura pública,
+-- escritura del rol `authenticated` (el admin); publicada en Realtime.
+create table if not exists public.config (
+  id          integer primary key check (id = 1),
+  modo_evento boolean not null default false  -- true: la landing redirige a /torneo
 );
 
 -- ---------------------------------------------------------------------------
@@ -58,6 +67,7 @@ create table if not exists public.fases (
   nombre        text primary key,   -- 'grupos','dieciseisavos','octavos','cuartos','semifinal','final'
   orden         integer not null,
   porra_abierta boolean not null default false,
+  hora_inicio   timestamptz,        -- hora objetivo de la cuenta atrás de la porra (informativa)
   puntos        integer
 );
 
