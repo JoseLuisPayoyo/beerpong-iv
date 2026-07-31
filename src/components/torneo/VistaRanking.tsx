@@ -33,7 +33,7 @@ export default function VistaRanking({
       <div className="prize">
         <div className="pl">PREMIO DEL PROFETA</div>
         <div className="pt">
-          El nº1 se lleva <b>5 copas</b>.
+          El nº1 se lleva <b>un bonocopas</b>.
         </div>
       </div>
 

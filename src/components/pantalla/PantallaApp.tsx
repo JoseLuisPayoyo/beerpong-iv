@@ -347,7 +347,7 @@ export default function PantallaApp() {
           bc: 'var(--lime)',
           foot: (
             <>
-              EL PROFETA SE LLEVA <b>5 COPAS</b>
+              EL PROFETA SE LLEVA <b>UN BONOCOPAS</b>
             </>
           ),
         };
