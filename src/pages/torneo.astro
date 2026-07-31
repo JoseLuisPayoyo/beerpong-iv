@@ -9,6 +9,7 @@ import '@fontsource/space-grotesk/600.css';
 import '@fontsource/space-mono/400.css';
 import '@fontsource/space-mono/700.css';
 import '../styles/torneo.css';
+import Analytics from '@vercel/analytics/astro';
 import TorneoApp from '../components/torneo/TorneoApp';
 ---
 
@@ -30,5 +31,6 @@ import TorneoApp from '../components/torneo/TorneoApp';
   </head>
   <body>
     <TorneoApp client:only="react" />
+    <Analytics />
   </body>
 </html>
