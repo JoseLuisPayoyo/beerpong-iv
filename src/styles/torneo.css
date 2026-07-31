@@ -57,7 +57,11 @@ body::before {
 .app {
   width: 100%;
   max-width: 432px;
-  min-height: 100vh;
+  /* Altura fija (no min-height): así .main hace scroll interno y la nav queda
+     siempre a la vista. 100dvh descuenta la barra de Safari en iOS (que con
+     100vh tapaba la nav); 100vh queda de respaldo para navegadores sin dvh. */
+  height: 100vh;
+  height: 100dvh;
   position: relative;
   z-index: 1;
   display: flex;
