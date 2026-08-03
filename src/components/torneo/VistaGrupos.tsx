@@ -61,17 +61,20 @@ export default function VistaGrupos({
     [partidosGrupo],
   );
 
-  // Bolsa de mejores terceros: los 13 terceros compiten (grupos iguales de 4),
-  // SOLO entre grupos completos. Mismo criterio que el admin: PTS → DIF → VF.
-  // Un 3º de grupo sin completar no es un 3º real todavía; y quedar fuera de
-  // las plazas entre completos ya es definitivo, porque los grupos que faltan
-  // solo pueden empujarte hacia abajo. Las plazas son las que queden hasta 32
-  // (6 con 13 grupos, 8 con 12). Set de grupo_id que clasifican.
+  // Bolsa de mejores terceros: SOLO terceros de grupos de 4 (el 3º de un
+  // grupo de 3 juega un partido menos y no es comparable; la condición es por
+  // tamaño del grupo, dinámica, nunca por letra) y SOLO entre grupos
+  // completos. Mismo criterio que el admin: PTS → DIF → VF. Un 3º de grupo
+  // sin completar no es un 3º real todavía; y quedar fuera de las plazas
+  // entre completos ya es definitivo, porque los grupos que faltan solo
+  // pueden empujarte hacia abajo. Las plazas son las que queden hasta 32
+  // (6 con 13 grupos: 32 − 13 − 13). Set de grupo_id que clasifican.
   const plazasTerceros = Math.max(0, 32 - grupos.length * 2);
   const mejoresTerceros = useMemo(() => {
     const pool: { gid: number; st: Standing }[] = [];
     for (const g of grupos) {
       if (g.estado !== 'completo') continue;
+      if ((standings.get(g.id)?.length ?? 0) < 4) continue; // grupos de 3, fuera
       const tercero = standings.get(g.id)?.[2];
       if (tercero) pool.push({ gid: g.id, st: tercero });
     }
@@ -140,7 +143,9 @@ export default function VistaGrupos({
             {subtitulo(
               activo,
               jugadosPorGrupo.get(activo.id) ?? 0,
-              crucesActivo.length || 6,
+              // sin partidos generados aún: n·(n−1)/2 según los equipos del grupo
+              crucesActivo.length ||
+                (((standings.get(activo.id)?.length ?? 4) * ((standings.get(activo.id)?.length ?? 4) - 1)) / 2),
               horaDeTurno(activo.turno, fases),
             )}
           </div>
@@ -153,7 +158,13 @@ export default function VistaGrupos({
           </div>
           <div>
             {(standings.get(activo.id) ?? []).map((row, i) => {
-              const { cls, label } = filaEstado(i, activo, mejoresTerceros, sellado);
+              const { cls, label } = filaEstado(
+                i,
+                activo,
+                mejoresTerceros,
+                sellado,
+                (standings.get(activo.id)?.length ?? 4) < 4,
+              );
               const quien = jugadores(row.equipoId);
               return (
                 <div key={String(row.equipoId)}>
@@ -290,10 +301,14 @@ function filaEstado(
   g: Grupo,
   mejoresTerceros: Set<number>,
   sellado: boolean,
+  esDeTres: boolean,
 ): { cls: string; label: string } {
   if (i === 0) return { cls: 'q', label: '1º · PASA' };
   if (i === 1) return { cls: 'q', label: '2º · PASA' };
   if (i === 2) {
+    // El 3º de un grupo de 3 no compite por plaza (juega un partido menos):
+    // ni «PASA», ni «EN LA PELEA», ni «FUERA» — solo 3º, apagado.
+    if (esDeTres) return { cls: 'mut', label: '3º' };
     // Grupo sin completar: su 3º aún no está decidido → siempre en la pelea.
     if (g.estado !== 'completo') return { cls: 'pv', label: '3º · EN LA PELEA' };
     if (mejoresTerceros.has(g.id)) {

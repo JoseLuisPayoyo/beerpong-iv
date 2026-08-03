@@ -306,7 +306,15 @@ function AvisosTorneo() {
       <summary>INFO DEL TORNEO · NORMAS</summary>
       <div className="av">
         <div className="avt">PLAZAS COMPLETAS</div>
-        <p>Las 52 plazas están cubiertas. 13 grupos, 52 equipos y un solo campeón.</p>
+        <p>13 grupos, 50 equipos y un solo campeón.</p>
+      </div>
+      <div className="av">
+        <div className="avt">GRUPOS DE 3</div>
+        <p>
+          Por las bajas de última hora, dos grupos (B y C) tienen 3 equipos en vez de 4. Pasan su
+          1º y su 2º, igual que en el resto. Su 3º no entra en el repesque de mejores terceros,
+          porque juega un partido menos que los demás.
+        </p>
       </div>
       <div className="av">
         <div className="avt">GRUPO M · 18:30</div>

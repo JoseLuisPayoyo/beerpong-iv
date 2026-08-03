@@ -67,7 +67,10 @@ export function mesaTanda(fase: Fase, orden: number): { mesa: number; tanda: num
 
 /** Los 32 clasificados en orden de semilla (1–13 primeros, 14–26 segundos y
     después los mejores terceros hasta 32), a partir de los partidos de grupo
-    jugados. Los 13 terceros compiten por las plazas (grupos iguales de 4). */
+    jugados. El 3º de un grupo de 3 NO entra en la bolsa de terceros: juega un
+    partido menos y no es comparable. La condición es por número de equipos
+    del grupo (dinámica), nunca por letra ni id: si un grupo de 3 pasa a 4,
+    su tercero entra solo. */
 export function construirSemillas(partidos: PartidoBase[]): Id[] {
   const deGrupo = partidos.filter((p) => p.fase === 'grupo');
   const gids = [...new Set(deGrupo.map((p) => p.grupo_id).filter((g): g is number => g != null))]
@@ -83,7 +86,7 @@ export function construirSemillas(partidos: PartidoBase[]): Id[] {
     const tabla = clasificar(equipoIds, gPart);
     primeros.push(tabla[0]);
     segundos.push(tabla[1]);
-    if (tabla[2]) terceros.push(tabla[2]);
+    if (tabla.length >= 4 && tabla[2]) terceros.push(tabla[2]); // solo grupos de 4
   }
   primeros.sort(compararStandings);
   segundos.sort(compararStandings);
