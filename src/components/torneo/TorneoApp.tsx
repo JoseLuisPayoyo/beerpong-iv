@@ -298,9 +298,18 @@ function AvisosTorneo() {
       <div className="av">
         <div className="avt">PLAZAS COMPLETAS</div>
         <p>
-          Las 48 plazas están cubiertas. Puedes apuntarte a la{' '}
+          Las 51 plazas están cubiertas. Puedes apuntarte a la{' '}
           <a href="/?landing=1#inscripcion">lista de espera</a>: si se cae algún equipo, avisamos
           por orden.
+        </p>
+      </div>
+      <div className="av">
+        <div className="avt">GRUPO M · 18:30</div>
+        <p>
+          Con los equipos de la lista de espera hay un 13º grupo de 3 equipos: el grupo M. Juega a
+          las 18:30, antes del turno 1, y pasan a la eliminatoria su 1º y su 2º, como en todos los
+          grupos. Su 3º no entra en el repesque de mejores terceros: juega un partido menos que el
+          resto y no sería comparable.
         </p>
       </div>
       <div className="av">

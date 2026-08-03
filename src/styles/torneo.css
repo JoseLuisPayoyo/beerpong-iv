@@ -833,6 +833,10 @@ body::before {
 .trow.out .nn {
   color: var(--pk);
 }
+/* 3º del grupo M: no compite por plaza → apagado, sin rosa ni ámbar */
+.trow.mut {
+  opacity: 0.5;
+}
 .cut {
   display: flex;
   align-items: center;

@@ -64,26 +64,33 @@ export function mesaTanda(fase: Fase, orden: number): { mesa: number; tanda: num
   }
 }
 
-/** Los 32 clasificados en orden de semilla (1–12 primeros, 13–24 segundos,
-    25–32 mejores terceros), a partir de los partidos de grupo jugados. */
+/** Los 32 clasificados en orden de semilla (1–13 primeros, 14–26 segundos y
+    después los mejores terceros hasta 32), a partir de los partidos de grupo
+    jugados. El 3º del grupo M (3 equipos) NO entra en la bolsa de terceros:
+    juega 2 partidos y los demás terceros juegan 3, no son comparables. */
 export function construirSemillas(partidos: PartidoBase[]): Id[] {
+  const deGrupo = partidos.filter((p) => p.fase === 'grupo');
+  const gids = [...new Set(deGrupo.map((p) => p.grupo_id).filter((g): g is number => g != null))]
+    .sort((a, b) => a - b);
   const primeros: Standing[] = [];
   const segundos: Standing[] = [];
   const terceros: Standing[] = [];
-  for (let gid = 1; gid <= 12; gid++) {
-    const gPart = partidos.filter((p) => p.fase === 'grupo' && p.grupo_id === gid);
+  for (const gid of gids) {
+    const gPart = deGrupo.filter((p) => p.grupo_id === gid);
     const equipoIds = [
       ...new Set(gPart.flatMap((p) => [p.equipo_a, p.equipo_b].filter((x): x is Id => x != null))),
     ];
     const tabla = clasificar(equipoIds, gPart);
     primeros.push(tabla[0]);
     segundos.push(tabla[1]);
-    terceros.push(tabla[2]);
+    if (tabla.length >= 4) terceros.push(tabla[2]); // solo grupos de 4
   }
   primeros.sort(compararStandings);
   segundos.sort(compararStandings);
   terceros.sort(compararStandings);
-  return [...primeros, ...segundos, ...terceros.slice(0, 8)].map((s) => s.equipoId);
+  // Plazas de terceros: lo que quede hasta 32 (6 con 13 grupos, 8 con 12).
+  const plazasTerceros = 32 - primeros.length - segundos.length;
+  return [...primeros, ...segundos, ...terceros.slice(0, plazasTerceros)].map((s) => s.equipoId);
 }
 
 /** Mapa equipo → semilla (1-32), para pintar «(n)» junto a cada nombre. */
@@ -131,24 +138,28 @@ export function filasSiguienteRonda(nueva: FaseElim, prev: PartidoBase[]): FilaE
   });
 }
 
-// Los 6 cruces de un grupo de 4, por posición; el índice del par es el `orden`.
-export const PARES: ReadonlyArray<readonly [number, number]> = [
-  [1, 2],
-  [1, 3],
-  [1, 4],
-  [2, 3],
-  [2, 4],
-  [3, 4],
-];
+/** Los cruces de un grupo por posición, según su número de equipos; el índice
+    del par es el `orden`. 4 equipos → [1,2],[1,3],[1,4],[2,3],[2,4],[3,4];
+    3 equipos (grupo M) → [1,2],[1,3],[2,3]. */
+export function paresDeGrupo(nEquipos: number): Array<[number, number]> {
+  const pares: Array<[number, number]> = [];
+  for (let a = 1; a <= nEquipos; a++) {
+    for (let b = a + 1; b <= nEquipos; b++) pares.push([a, b]);
+  }
+  return pares;
+}
 
-/** Las 72 filas de la fase de grupos a partir de grupo → (posición → equipo).
-    Nacen publicadas: la fase de grupos no tiene borrador. */
+/** Las filas de la fase de grupos (75: 6 por grupo de 4 y 3 del grupo M) a
+    partir de grupo → (posición → equipo). Nacen publicadas: la fase de grupos
+    no tiene borrador. */
 export function filasPartidosGrupo(posicionesPorGrupo: Map<number, Map<number, Id>>) {
   const filas = [];
-  for (let gid = 1; gid <= 12; gid++) {
+  const gids = [...posicionesPorGrupo.keys()].sort((a, b) => a - b);
+  for (const gid of gids) {
     const posiciones = posicionesPorGrupo.get(gid)!;
-    for (let orden = 0; orden < PARES.length; orden++) {
-      const [a, b] = PARES[orden];
+    const pares = paresDeGrupo(posiciones.size);
+    for (let orden = 0; orden < pares.length; orden++) {
+      const [a, b] = pares[orden];
       filas.push({
         fase: 'grupo',
         grupo_id: gid,
@@ -162,20 +173,26 @@ export function filasPartidosGrupo(posicionesPorGrupo: Map<number, Map<number, I
   return filas;
 }
 
-/** Estado y 1º que corresponden a un grupo según sus 6 partidos. */
+/** Estado y 1º que corresponden a un grupo según sus partidos (6 en los grupos
+    de 4, 3 en el grupo M: n·(n−1)/2 para n equipos). */
 export function derivarGrupo(delGrupo: PartidoClasif[]): {
   estado: 'en_curso' | 'completo';
   ganadorId: Id | null;
 } {
-  const completo = delGrupo.length === 6 && delGrupo.every((x) => x.estado === 'jugado');
-  if (!completo) return { estado: 'en_curso', ganadorId: null };
   const equipoIds = [
     ...new Set(delGrupo.flatMap((x) => [x.equipo_a, x.equipo_b].filter((v): v is Id => v != null))),
   ];
+  const esperados = (equipoIds.length * (equipoIds.length - 1)) / 2;
+  const completo =
+    delGrupo.length > 0 &&
+    delGrupo.length === esperados &&
+    delGrupo.every((x) => x.estado === 'jugado');
+  if (!completo) return { estado: 'en_curso', ganadorId: null };
   return { estado: 'completo', ganadorId: clasificar(equipoIds, delGrupo)[0]?.equipoId ?? null };
 }
 
-/** Mesa «física» de un partido de grupo: A–F y G–L reparten las mesas 1–6. */
+/** Mesa «física» de un partido de grupo: A–F y G–L reparten las mesas 1–6;
+    el grupo M (13) cae en la mesa 1, que a las 18:30 está libre. */
 export const mesaDeGrupo = (grupoId: number) => ((grupoId - 1) % 6) + 1;
 
 /** Redondea al siguiente cuarto de hora (para el valor inicial del selector). */

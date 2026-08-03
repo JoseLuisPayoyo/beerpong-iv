@@ -154,11 +154,12 @@ export default function Eliminatoria() {
   const faseInfo = useCallback((f: string) => fases.find((x) => x.nombre === f) ?? null, [fases]);
 
   const gruposCompletos = grupos.filter((g) => g.estado === 'completo').length;
+  const todosLosGrupos = grupos.length > 0 && gruposCompletos === grupos.length;
 
   // Semillas 1–32 para pintar el borrador (solo calculables con los grupos cerrados).
   const semillas = useMemo(
-    () => (gruposCompletos === 12 ? mapaSemillas(partidos) : null),
-    [gruposCompletos, partidos],
+    () => (todosLosGrupos ? mapaSemillas(partidos) : null),
+    [todosLosGrupos, partidos],
   );
 
   function patch(id: Id, cambios: Partial<Partido>) {
@@ -169,9 +170,9 @@ export default function Eliminatoria() {
   async function generarDieciseisavos() {
     setErrOp(null);
     setAccion(true);
-    if (gruposCompletos !== 12) {
+    if (!todosLosGrupos) {
       setAccion(false);
-      setAviso({ tipo: 'err', texto: 'Los 12 grupos deben estar completos.' });
+      setAviso({ tipo: 'err', texto: `Los ${grupos.length || 13} grupos deben estar completos.` });
       return;
     }
     const { data: ex, error: e0 } = vigilar(
@@ -392,8 +393,8 @@ export default function Eliminatoria() {
     if (!existe('dieciseisavos'))
       return {
         label: 'Generar dieciseisavos',
-        puede: gruposCompletos === 12,
-        hint: 'Se activa cuando los 12 grupos estén completos.',
+        puede: todosLosGrupos,
+        hint: 'Se activa cuando los 13 grupos estén completos.',
         pregunta:
           'Sembrar los 32 clasificados en 16 cruces de dieciseisavos, en borrador (el público no lo ve). ¿Seguir?',
         run: generarDieciseisavos,

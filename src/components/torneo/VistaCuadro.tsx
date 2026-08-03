@@ -47,7 +47,7 @@ export default function VistaCuadro({
           <div className="et">
             El cuadro se abre cuando
             <br />
-            terminen los 12 grupos.
+            terminen los 13 grupos.
           </div>
         </div>
       </section>

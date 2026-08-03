@@ -20,11 +20,13 @@ create table if not exists public.equipos (
 );
 
 -- ---------------------------------------------------------------------------
--- grupos: 12 grupos (A–L) en 2 turnos. Las 12 filas ya están insertadas.
+-- grupos: 12 grupos de 4 (A–L) en 2 turnos + el grupo M (13) de 3 equipos,
+-- que juega a las 18:30 con turno 0. Las 13 filas ya están insertadas
+-- (la del grupo M, con db/grupo_m.sql).
 create table if not exists public.grupos (
-  id         integer primary key check (id between 1 and 12),
-  letra      text not null check (letra between 'A' and 'L'),
-  turno      integer not null check (turno in (1, 2)), -- 1 = A–F, 2 = G–L
+  id         integer primary key check (id between 1 and 13),
+  letra      text not null check (letra between 'A' and 'M'),
+  turno      integer not null check (turno in (0, 1, 2)), -- 0 = M, 1 = A–F, 2 = G–L
   estado     text not null default 'pendiente'
                check (estado in ('pendiente', 'en_curso', 'completo')),
   ganador_id uuid references public.equipos(id)         -- 1º del grupo (para la porra)

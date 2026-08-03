@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { paresDeGrupo } from './acciones';
 import {
   BotonRegenerar,
   ConfirmButton,
@@ -14,18 +15,14 @@ import { vigilar } from './red';
 // AdminPanel comprueba que el cliente existe antes de montar esta pestaña.
 const sb = supabase!;
 
-const TOTAL_PLAZAS = 48;
-const NUM_GRUPOS = 12;
+const TOTAL_PLAZAS = 51; // 12 grupos de 4 + el grupo M de 3
+const NUM_GRUPOS = 13; // A–L (1-12) + M (13)
 const POSICIONES = [1, 2, 3, 4] as const;
-// Los 6 cruces de un grupo de 4, por posición; el índice del par es el `orden` (0-5).
-const PARES: ReadonlyArray<readonly [number, number]> = [
-  [1, 2],
-  [1, 3],
-  [1, 4],
-  [2, 3],
-  [2, 4],
-  [3, 4],
-];
+// El grupo M (13) tiene 3 equipos; el resto, 4.
+const tamGrupo = (gid: number) => (gid === 13 ? 3 : 4);
+const posicionesDe = (gid: number) => POSICIONES.slice(0, tamGrupo(gid));
+// Total de partidos de grupo: 6 por grupo de 4 + 3 del grupo M = 75.
+const TOTAL_PARTIDOS = 75;
 
 type Id = string | number;
 type Estado = 'confirmado' | 'espera' | 'pagado' | 'rechazado';
@@ -51,7 +48,7 @@ interface PartidoNuevo {
   estado: 'pendiente';
 }
 
-const letra = (gid: number) => String.fromCharCode(64 + gid); // 1 → 'A' … 12 → 'L'
+const letra = (gid: number) => String.fromCharCode(64 + gid); // 1 → 'A' … 13 → 'M'
 
 function barajar<T>(lista: T[]): T[] {
   const a = [...lista];
@@ -64,7 +61,7 @@ function barajar<T>(lista: T[]): T[] {
 
 export default function Equipos() {
   const [equipos, setEquipos] = useState<Equipo[] | null>(null);
-  const [hayPartidos, setHayPartidos] = useState(false); // ya existen los 72 de grupos
+  const [hayPartidos, setHayPartidos] = useState(false); // ya existen los 75 de grupos
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [aviso, setAviso] = useAviso();
   const [errOp, setErrOp] = useState<ErrorOp | null>(null);
@@ -122,7 +119,7 @@ export default function Equipos() {
     let n = 0;
     for (let gid = 1; gid <= NUM_GRUPOS; gid++) {
       const posiciones = posicionesPorGrupo.get(gid);
-      if (posiciones && POSICIONES.every((p) => posiciones.has(p))) n++;
+      if (posiciones && posicionesDe(gid).every((p) => posiciones.has(p))) n++;
     }
     return n;
   }, [posicionesPorGrupo]);
@@ -176,9 +173,9 @@ export default function Equipos() {
     const gid = Number(valor);
     if (eq.grupo_id === gid) return;
     const ocupadas = posicionesPorGrupo.get(gid);
-    const libre = POSICIONES.find((p) => !ocupadas?.has(p));
+    const libre = posicionesDe(gid).find((p) => !ocupadas?.has(p));
     if (!libre) {
-      setAviso({ tipo: 'err', texto: `El grupo ${letra(gid)} ya tiene 4 equipos.` });
+      setAviso({ tipo: 'err', texto: `El grupo ${letra(gid)} ya tiene ${tamGrupo(gid)} equipos.` });
       return;
     }
     void actualizar(
@@ -196,6 +193,7 @@ export default function Equipos() {
     const huecos: Array<{ gid: number; pos: number }> = [];
     for (const pos of POSICIONES) {
       for (let gid = 1; gid <= NUM_GRUPOS; gid++) {
+        if (pos > tamGrupo(gid)) continue; // el grupo M no tiene posición 4
         if (!posicionesPorGrupo.get(gid)?.has(pos)) huecos.push({ gid, pos });
       }
     }
@@ -259,14 +257,14 @@ export default function Equipos() {
     setErrOp(null);
     setAccion('partidos');
 
-    // Cada grupo debe tener exactamente 4 equipos (las 4 posiciones cubiertas)
+    // Cada grupo debe tener sus equipos justos (4, o 3 en el grupo M)
     for (let gid = 1; gid <= NUM_GRUPOS; gid++) {
       const delGrupo = activos.filter((e) => e.grupo_id === gid);
-      if (delGrupo.length !== 4) {
+      if (delGrupo.length !== tamGrupo(gid)) {
         setAccion(null);
         setAviso({
           tipo: 'err',
-          texto: `El grupo ${letra(gid)} tiene ${delGrupo.length} equipos; deben ser 4 justos.`,
+          texto: `El grupo ${letra(gid)} tiene ${delGrupo.length} equipos; deben ser ${tamGrupo(gid)} justos.`,
         });
         return;
       }
@@ -296,7 +294,7 @@ export default function Equipos() {
     const filas: PartidoNuevo[] = [];
     for (let gid = 1; gid <= NUM_GRUPOS; gid++) {
       const posiciones = posicionesPorGrupo.get(gid)!;
-      PARES.forEach(([a, b], orden) => {
+      paresDeGrupo(posiciones.size).forEach(([a, b], orden) => {
         filas.push({
           fase: 'grupo',
           grupo_id: gid,
@@ -459,7 +457,7 @@ export default function Equipos() {
         </p>
         <ConfirmButton
           className="pc-btn primary block"
-          question={`Repartir al azar ${sinGrupo} equipos sin grupo entre los 12 grupos. Los ya asignados a mano no se tocan.`}
+          question={`Repartir al azar ${sinGrupo} equipos sin grupo entre los 13 grupos. Los ya asignados a mano no se tocan.`}
           disabled={sinGrupo === 0}
           busy={accion === 'sorteo'}
           busyLabel="Sorteando…"
@@ -482,12 +480,12 @@ export default function Equipos() {
       <div className="eq-block">
         <p className="pc-gtitle">Partidos de grupo</p>
         <p className="eq-count">
-          <b>{gruposCompletos}/12</b> grupos completos
+          <b>{gruposCompletos}/{NUM_GRUPOS}</b> grupos completos
         </p>
         {!hayPartidos ? (
           <ConfirmButton
             className="pc-btn primary block"
-            question="Crear los 72 partidos de la fase de grupos (6 por grupo)."
+            question={`Crear los ${TOTAL_PARTIDOS} partidos de la fase de grupos (6 por grupo, 3 el grupo M).`}
             disabled={gruposCompletos !== NUM_GRUPOS || accion !== null}
             busy={accion === 'partidos'}
             busyLabel="Creando…"
@@ -498,13 +496,13 @@ export default function Equipos() {
         ) : (
           <>
             {/* Para cuando se cambia a alguien de grupo DESPUÉS de generar:
-                borra los 72 (y la eliminatoria si existiera) y los recrea
+                borra los 75 (y la eliminatoria si existiera) y los recrea
                 con las asignaciones actuales. */}
             <BotonRegenerar
               etiqueta="Regenerar partidos de grupo"
               fases={['grupo', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final']}
               resumen={(info) =>
-                `${textoBorrado(info, ['grupo', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final'])} Después se volverán a crear los 72 partidos de grupos con las asignaciones actuales. ¿Seguir?`
+                `${textoBorrado(info, ['grupo', 'dieciseisavos', 'octavos', 'cuartos', 'semifinal', 'final'])} Después se volverán a crear los ${TOTAL_PARTIDOS} partidos de grupos con las asignaciones actuales. ¿Seguir?`
               }
               onRegenerar={async () => {
                 await generarPartidos();
@@ -513,13 +511,15 @@ export default function Equipos() {
               disabled={gruposCompletos !== NUM_GRUPOS || accion !== null}
             />
             <p className="pc-hint">
-              Los 72 partidos ya existen. Regenerar sirve si has cambiado a alguien de grupo
-              después de generarlos.
+              Los {TOTAL_PARTIDOS} partidos ya existen. Regenerar sirve si has cambiado a alguien
+              de grupo después de generarlos.
             </p>
           </>
         )}
         {gruposCompletos !== NUM_GRUPOS && (
-          <p className="pc-hint">Se activa cuando los 12 grupos tengan sus 4 equipos.</p>
+          <p className="pc-hint">
+            Se activa cuando los 13 grupos tengan sus equipos (4 por grupo, 3 el M).
+          </p>
         )}
       </div>
 

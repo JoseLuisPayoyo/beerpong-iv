@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { clasificar, compararStandings, type Id, type Standing } from '../../lib/clasificacion';
-import { horaDeFase } from '../../lib/horarios';
+import { horaDeFase, horaDeTurno } from '../../lib/horarios';
 
 // Pantalla de proyector (/pantalla). Se abre, se pone a pantalla completa y no
 // se toca en toda la noche: la vista se deriva del estado del torneo en la BD.
@@ -275,9 +275,11 @@ export default function PantallaApp() {
     }
 
     // 5) grupos con algún resultado → clasificación por bloques de 4 (15 s)
+    //    (13 grupos → 4 bloques: 4+4+4+1)
     const deGrupo = partidos.filter((p) => p.fase === 'grupo');
     if (deGrupo.length > 0 && deGrupo.some((p) => p.estado === 'jugado')) {
-      return { v: 'clasificacion', bloque: Math.floor(ahora / 15000) % 3 };
+      const bloques = Math.max(1, Math.ceil(datos.grupos.length / 4));
+      return { v: 'clasificacion', bloque: Math.floor(ahora / 15000) % bloques };
     }
 
     // 6) nada aún → bienvenida
@@ -430,7 +432,7 @@ export default function PantallaApp() {
         <div className="foot">
           <span className="l">6 AGO · POLIDEPORTIVO · CABRA DEL SANTO CRISTO</span>
           <span className="c">{marco.foot}</span>
-          <span className="l">IV EDICIÓN · 48 EQUIPOS</span>
+          <span className="l">IV EDICIÓN · 51 EQUIPOS</span>
         </div>
       </div>
 
@@ -461,11 +463,11 @@ function Bienvenida({ datos }: { datos: Datos | null }) {
       <div className="sub">EMPEZAMOS A LAS {hora}</div>
       <div className="row">
         <div className="st">
-          <div className="v">48</div>
+          <div className="v">51</div>
           <div className="k">EQUIPOS</div>
         </div>
         <div className="st">
-          <div className="v">12</div>
+          <div className="v">13</div>
           <div className="k">GRUPOS</div>
         </div>
         <div className="st">
@@ -493,7 +495,7 @@ function Bienvenida({ datos }: { datos: Datos | null }) {
 }
 
 function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
-  const { grupos, partidos, equipos } = datos;
+  const { grupos, partidos, equipos, fases } = datos;
   const partidosGrupo = partidos.filter((p) => p.fase === 'grupo');
 
   // Misma clasificación y criterio de mejores terceros que /torneo.
@@ -505,15 +507,19 @@ function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
       .map((e) => e.id);
     standings.set(g.id, clasificar(ids, partidosGrupo.filter((p) => p.grupo_id === g.id)));
   }
-  const sellado = grupos.length === 12 && grupos.every((g) => g.estado === 'completo');
+  const sellado = grupos.length > 0 && grupos.every((g) => g.estado === 'completo');
+  // Bolsa de terceros: solo grupos de 4 (el 3º del grupo M no compite por
+  // plaza) y las plazas que queden hasta 32 (6 con 13 grupos, 8 con 12).
+  const plazasTerceros = Math.max(0, 32 - grupos.length * 2);
   const pool: { gid: number; st: Standing }[] = [];
   for (const g of grupos) {
     if (g.estado !== 'completo') continue;
+    if ((standings.get(g.id)?.length ?? 0) < 4) continue;
     const tercero = standings.get(g.id)?.[2];
     if (tercero) pool.push({ gid: g.id, st: tercero });
   }
   pool.sort((a, b) => compararStandings(a.st, b.st));
-  const mejoresTerceros = new Set(pool.slice(0, 8).map((t) => t.gid));
+  const mejoresTerceros = new Set(pool.slice(0, plazasTerceros).map((t) => t.gid));
 
   const nombrePor = new Map(equipos.map((e) => [e.id, e.nombre_equipo]));
   const delBloque = [...grupos].sort((a, b) => a.id - b.id).slice(bloque * 4, bloque * 4 + 4);
@@ -521,6 +527,7 @@ function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
   const claseFila = (i: number, g: GrupoRow): string => {
     if (i <= 1) return 'q';
     if (i === 2) {
+      if (g.turno === 0) return 'mut'; // 3º del grupo M: sin plaza en juego
       if (g.estado !== 'completo') return 'pv';
       if (mejoresTerceros.has(g.id)) return sellado ? 'q' : 'pv';
       return 'out';
@@ -534,12 +541,16 @@ function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
         const jugados = partidosGrupo.filter(
           (p) => p.grupo_id === g.id && p.estado === 'jugado',
         ).length;
+        const total =
+          partidosGrupo.filter((p) => p.grupo_id === g.id).length || (g.turno === 0 ? 3 : 6);
         const sub =
           g.estado === 'completo'
-            ? '6/6 · CERRADO'
+            ? `${total}/${total} · CERRADO`
             : g.estado === 'en_curso'
-              ? `${jugados}/6 · EN JUEGO`
-              : `TURNO ${g.turno} · POR JUGAR`;
+              ? `${jugados}/${total} · EN JUEGO`
+              : g.turno === 0
+                ? `${horaDeTurno(0, fases)} · POR JUGAR`
+                : `TURNO ${g.turno} · POR JUGAR`;
         return (
           <div className="gcard" key={g.id}>
             <div className="gh">

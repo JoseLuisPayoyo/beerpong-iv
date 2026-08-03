@@ -55,26 +55,31 @@ export default function VistaGrupos({
     return m;
   }, [grupos, partidosGrupo]);
 
-  const sellado = grupos.length === 12 && grupos.every((g) => g.estado === 'completo');
+  const sellado = grupos.length > 0 && grupos.every((g) => g.estado === 'completo');
   const jugadosTotal = useMemo(
     () => partidosGrupo.filter((p) => p.estado === 'jugado').length,
     [partidosGrupo],
   );
 
-  // Mejores 8 terceros: SOLO entre grupos completos (mismo criterio que el
-  // admin: PTS → DIF → VF). Un 3º de grupo sin completar no es un 3º real
-  // todavía; y quedar 9º+ entre completos ya es definitivo, porque los grupos
-  // que faltan solo pueden empujarte hacia abajo. Set de grupo_id que clasifican.
+  // Bolsa de mejores terceros: SOLO entre grupos de 4 completos (el 3º del
+  // grupo M juega un partido menos y no es comparable; no entra). Mismo
+  // criterio que el admin: PTS → DIF → VF. Un 3º de grupo sin completar no es
+  // un 3º real todavía; y quedar fuera de las plazas entre completos ya es
+  // definitivo, porque los grupos que faltan solo pueden empujarte hacia
+  // abajo. Las plazas son las que queden hasta 32 (6 con 13 grupos, 8 con 12).
+  // Set de grupo_id que clasifican.
+  const plazasTerceros = Math.max(0, 32 - grupos.length * 2);
   const mejoresTerceros = useMemo(() => {
     const pool: { gid: number; st: Standing }[] = [];
     for (const g of grupos) {
       if (g.estado !== 'completo') continue;
+      if ((standings.get(g.id)?.length ?? 0) < 4) continue; // grupo M fuera de la bolsa
       const tercero = standings.get(g.id)?.[2];
       if (tercero) pool.push({ gid: g.id, st: tercero });
     }
     pool.sort((a, b) => compararStandings(a.st, b.st));
-    return new Set(pool.slice(0, 8).map((t) => t.gid));
-  }, [grupos, standings]);
+    return new Set(pool.slice(0, plazasTerceros).map((t) => t.gid));
+  }, [grupos, standings, plazasTerceros]);
 
   const gruposOrden = useMemo(() => [...grupos].sort((a, b) => a.id - b.id), [grupos]);
   const activo =
@@ -108,7 +113,7 @@ export default function VistaGrupos({
         </div>
       )}
 
-      {/* dos filas: los 12 grupos a la vista, sin scroll escondido */}
+      {/* los 13 grupos a la vista (dos filas y pico), sin scroll escondido */}
       <div className="chips g2">
         {gruposOrden.map((g) => {
           const badge =
@@ -134,7 +139,12 @@ export default function VistaGrupos({
         <>
           <div className="gname">GRUPO {activo.letra}</div>
           <div className="gstat">
-            {subtitulo(activo, jugadosPorGrupo.get(activo.id) ?? 0, horaDeTurno(activo.turno, fases))}
+            {subtitulo(
+              activo,
+              jugadosPorGrupo.get(activo.id) ?? 0,
+              crucesActivo.length || (activo.turno === 0 ? 3 : 6),
+              horaDeTurno(activo.turno, fases),
+            )}
           </div>
           <div className="thead">
             <span style={{ width: 22 }}>#</span>
@@ -264,9 +274,11 @@ function PartidoGrupo({
   );
 }
 
-function subtitulo(g: Grupo, jugados: number, hora: string): string {
-  if (g.estado === 'completo') return 'COMPLETADO · 6/6 PARTIDOS';
-  if (g.estado === 'en_curso') return `EN JUEGO · ${jugados}/6 PARTIDOS`;
+function subtitulo(g: Grupo, jugados: number, total: number, hora: string): string {
+  if (g.estado === 'completo') return `COMPLETADO · ${total}/${total} PARTIDOS`;
+  if (g.estado === 'en_curso') return `EN JUEGO · ${jugados}/${total} PARTIDOS`;
+  // El grupo M (turno 0) no pertenece a ningún turno: va con su hora, 18:30.
+  if (g.turno === 0) return `GRUPO M · ${hora} · POR JUGAR`;
   return `TURNO ${g.turno} · ${hora} · POR JUGAR`;
 }
 
@@ -284,6 +296,9 @@ function filaEstado(
   if (i === 0) return { cls: 'q', label: '1º · PASA' };
   if (i === 1) return { cls: 'q', label: '2º · PASA' };
   if (i === 2) {
+    // El 3º del grupo M (turno 0) no compite por plaza: juega un partido menos
+    // que el resto de terceros. Ni «EN LA PELEA» ni «PASA»: solo 3º, apagado.
+    if (g.turno === 0) return { cls: 'mut', label: '3º' };
     // Grupo sin completar: su 3º aún no está decidido → siempre en la pelea.
     if (g.estado !== 'completo') return { cls: 'pv', label: '3º · EN LA PELEA' };
     if (mejoresTerceros.has(g.id)) {
@@ -291,7 +306,7 @@ function filaEstado(
         ? { cls: 'q', label: '3º · PASA' } // definitivo
         : { cls: 'pv', label: '3º · EN LA PELEA' }; // provisional
     }
-    // 9º o peor entre los terceros de grupos completos: fuera definitivo.
+    // Fuera de las plazas entre los terceros de grupos completos: fuera definitivo.
     return { cls: 'out', label: '3º · FUERA' };
   }
   return { cls: 'out', label: '4º · FUERA' };

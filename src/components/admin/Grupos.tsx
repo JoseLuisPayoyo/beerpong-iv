@@ -18,9 +18,9 @@ type Id = string | number;
 type EstadoGrupo = 'pendiente' | 'en_curso' | 'completo';
 
 interface Grupo {
-  id: number; // 1-12
-  letra: string; // 'A'-'L'
-  turno: number; // 1 = A-F, 2 = G-L
+  id: number; // 1-13
+  letra: string; // 'A'-'M'
+  turno: number; // 0 = M (18:30), 1 = A-F, 2 = G-L
   estado: EstadoGrupo;
   ganador_id: Id | null;
 }
@@ -28,7 +28,7 @@ interface Grupo {
 interface Partido {
   id: Id;
   grupo_id: number;
-  orden: number; // 0-5
+  orden: number; // 0-5 (0-2 en el grupo M)
   equipo_a: Id;
   equipo_b: Id;
   vasos_a: number | null;
@@ -37,7 +37,9 @@ interface Partido {
   estado: 'pendiente' | 'jugado';
 }
 
+// El turno 0 es el grupo M solo: juega a las 18:30, antes del turno 1.
 const TURNOS = [
+  { n: 0, label: 'Grupo M · 18:30' },
   { n: 1, label: 'Grupos A–F' },
   { n: 2, label: 'Grupos G–L' },
 ];
@@ -123,6 +125,11 @@ export default function Grupos() {
     (gid: number) => partidos.filter((p) => p.grupo_id === gid && p.estado === 'jugado').length,
     [partidos],
   );
+  // Partidos totales del grupo (6 en los de 4, 3 en el grupo M); 0 = sin generar.
+  const totalDe = useCallback(
+    (gid: number) => partidos.filter((p) => p.grupo_id === gid).length,
+    [partidos],
+  );
 
   async function iniciarTurno(n: number) {
     setErrOp(null);
@@ -161,7 +168,9 @@ export default function Grupos() {
       texto:
         n === 1
           ? 'Turno 1 iniciado y porra de grupos cerrada.'
-          : `Turno ${n} iniciado.`,
+          : n === 0
+            ? 'Grupo M iniciado.'
+            : `Turno ${n} iniciado.`,
     });
   }
 
@@ -258,7 +267,7 @@ export default function Grupos() {
     setGuardando(null);
     setEditando(null);
 
-    // ¿El grupo queda completo? (sus 6 partidos jugados)
+    // ¿El grupo queda completo? (todos sus partidos jugados: 6, o 3 en el M)
     const delGrupo = nuevosPartidos.filter((x) => x.grupo_id === p.grupo_id);
     const { estado, ganadorId } = derivarGrupo(delGrupo);
     if (estado === 'completo') {
@@ -266,7 +275,7 @@ export default function Grupos() {
         p.grupo_id,
         estado,
         ganadorId,
-        'Grupo completo: los 6 partidos están jugados.',
+        `Grupo completo: los ${delGrupo.length} partidos están jugados.`,
       );
     } else {
       setAviso({ tipo: 'ok', texto: 'Resultado guardado.' });
@@ -333,17 +342,21 @@ export default function Grupos() {
   return (
     <>
       <p className="pc-note-top">
-        Activa un turno para abrir sus 6 grupos. Dentro, mete los resultados en el orden que te dé
-        la gana. Un resultado guardado se puede corregir con su botón «Corregir».
+        Activa un turno para abrir sus grupos (el grupo M va solo, a las 18:30). Dentro, mete los
+        resultados en el orden que te dé la gana. Un resultado guardado se puede corregir con su
+        botón «Corregir».
       </p>
 
-      {TURNOS.map(({ n, label }) => {
+      {TURNOS.filter(
+        // El turno 0 solo se pinta si la fila del grupo M existe en la BD.
+        ({ n }) => n !== 0 || (grupos ?? []).some((g) => g.turno === 0),
+      ).map(({ n, label }) => {
         const estado = estadoTurno(n);
         return (
           <div key={n}>
             <div className="pc-turno">
               <div className="tt">
-                <div className="tn">TURNO {n}</div>
+                <div className="tn">{n === 0 ? 'GRUPO M' : `TURNO ${n}`}</div>
                 <div className="tg">{label}</div>
               </div>
               {estado === 'completo' && <span className="pc-pill ok">✓ COMPLETO</span>}
@@ -355,7 +368,9 @@ export default function Grupos() {
                   question={
                     n === 1
                       ? 'Iniciar el Turno 1 abre los grupos A–F y CIERRA la porra de grupos para el público (irreversible). ¿Seguir?'
-                      : `Iniciar el Turno ${n} abre los grupos ${label.replace('Grupos ', '')}. ¿Seguir?`
+                      : n === 0
+                        ? 'Abrir el grupo M: sus 3 partidos se juegan en una mesa a las 18:30, antes del turno 1. ¿Seguir?'
+                        : `Iniciar el Turno ${n} abre los grupos ${label.replace('Grupos ', '')}. ¿Seguir?`
                   }
                   confirmLabel={n === 1 ? 'Sí, iniciar y cerrar porra' : 'Sí, iniciar'}
                   disabled={iniciando !== null}
@@ -363,7 +378,7 @@ export default function Grupos() {
                   busyLabel="Iniciando…"
                   onConfirm={() => void iniciarTurno(n)}
                 >
-                  Iniciar Turno {n}
+                  {n === 0 ? 'Iniciar Grupo M' : `Iniciar Turno ${n}`}
                 </ConfirmButton>
               )}
             </div>
@@ -375,6 +390,7 @@ export default function Grupos() {
         <div className="pc-chips">
           {visibles.map((g) => {
             const done = jugadosDe(g.id);
+            const total = totalDe(g.id);
             return (
               <button
                 key={g.id}
@@ -382,8 +398,8 @@ export default function Grupos() {
                 onClick={() => setSel(g.id)}
               >
                 {g.letra}
-                {done === 6 && <span className="bd ok">✓</span>}
-                {done > 0 && done < 6 && <span className="bd pend" />}
+                {total > 0 && done === total && <span className="bd ok">✓</span>}
+                {done > 0 && done < total && <span className="bd pend" />}
               </button>
             );
           })}
@@ -396,7 +412,7 @@ export default function Grupos() {
             Grupo {grupoActivo.letra} ·{' '}
             <b>
               {partidosActivo.filter((p) => p.estado === 'jugado').length}/
-              {partidosActivo.length || 6} partidos
+              {partidosActivo.length || (grupoActivo.turno === 0 ? 3 : 6)} partidos
             </b>
           </p>
 

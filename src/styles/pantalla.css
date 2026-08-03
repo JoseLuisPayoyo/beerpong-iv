@@ -364,6 +364,10 @@ body {
 .tr.out .n {
   color: var(--magenta);
 }
+/* 3º del grupo M: no compite por plaza → apagado, sin magenta ni ámbar */
+.tr.mut {
+  opacity: 0.45;
+}
 
 /* ---- cuenta atrás ---- */
 .cd {

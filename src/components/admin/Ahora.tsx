@@ -167,9 +167,11 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
   }, [activos]);
   const gruposLlenos = useMemo(() => {
     let n = 0;
-    for (let gid = 1; gid <= 12; gid++) {
-      const p = posPorGrupo.get(gid);
-      if (p && [1, 2, 3, 4].every((x) => p.has(x))) n++;
+    for (let gid = 1; gid <= 13; gid++) {
+      const posiciones = posPorGrupo.get(gid);
+      const tam = gid === 13 ? 3 : 4; // el grupo M tiene 3 equipos
+      if (posiciones && Array.from({ length: tam }, (_, i) => i + 1).every((x) => posiciones.has(x)))
+        n++;
     }
     return n;
   }, [posPorGrupo]);
@@ -198,7 +200,14 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
   // ---- la máquina de estados: qué toca AHORA ----
   const modo: Modo = useMemo(() => {
     if (partidosGrupo.length === 0) {
-      return gruposLlenos === 12 && sinGrupo === 0 ? { t: 'generar72' } : { t: 'colocar' };
+      return gruposLlenos === 13 && sinGrupo === 0 ? { t: 'generar72' } : { t: 'colocar' };
+    }
+    // El grupo M (turno 0) va primero: juega a las 18:30, antes del turno 1.
+    // (Si la fila del grupo M no existe en la BD, el turno 0 no pinta nada.)
+    if (grupos.some((g) => g.turno === 0)) {
+      const t0 = turnoEstado(0);
+      if (t0 === 'pendiente') return { t: 'iniciarTurno', n: 0 };
+      if (t0 !== 'completo') return { t: 'turno', n: 0 };
     }
     const t1 = turnoEstado(1);
     if (t1 === 'pendiente') return { t: 'iniciarTurno', n: 1 };
@@ -215,11 +224,12 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
       }
     }
     return { t: 'campeon' };
-  }, [partidosGrupo, gruposLlenos, sinGrupo, turnoEstado, deFase]);
+  }, [partidosGrupo, gruposLlenos, sinGrupo, turnoEstado, deFase, grupos]);
 
   const semillas = useMemo(
-    () => (gruposCompletosCnt === 12 ? mapaSemillas(partidos) : null),
-    [gruposCompletosCnt, partidos],
+    () =>
+      grupos.length > 0 && gruposCompletosCnt === grupos.length ? mapaSemillas(partidos) : null,
+    [grupos.length, gruposCompletosCnt, partidos],
   );
 
   // ---- acciones directas ----
@@ -250,7 +260,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
       return;
     }
     await cargar();
-    setAviso({ tipo: 'ok', texto: 'Creados los 72 partidos de la fase de grupos.' });
+    setAviso({ tipo: 'ok', texto: 'Creados los 75 partidos de la fase de grupos.' });
   }
 
   async function iniciarTurno(n: number) {
@@ -285,7 +295,12 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
     setAccion(false);
     setAviso({
       tipo: 'ok',
-      texto: n === 1 ? 'Turno 1 iniciado y porra de grupos cerrada.' : `Turno ${n} iniciado.`,
+      texto:
+        n === 1
+          ? 'Turno 1 iniciado y porra de grupos cerrada.'
+          : n === 0
+            ? 'Grupo M iniciado.'
+            : `Turno ${n} iniciado.`,
     });
   }
 
@@ -510,36 +525,40 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
           fase: 'ANTES DE EMPEZAR',
           titulo: 'Faltan equipos por colocar',
           prog: 0,
-          sub: `${asignados} / 48 ASIGNADOS · ${sinGrupo} SIN GRUPO`,
+          sub: `${asignados} / 51 ASIGNADOS · ${sinGrupo} SIN GRUPO`,
         };
       case 'generar72':
         return {
           fase: 'ANTES DE EMPEZAR',
-          titulo: '48 equipos, 12 grupos',
+          titulo: '51 equipos, 13 grupos',
           prog: 0,
-          sub: 'GRUPOS A–L COMPLETOS · PARTIDOS SIN GENERAR',
+          sub: 'GRUPOS A–M COMPLETOS · PARTIDOS SIN GENERAR',
         };
       case 'iniciarTurno':
         return {
           fase: 'FASE DE GRUPOS',
-          titulo: `Turno ${modo.n} listo para empezar`,
-          prog: (jugadosGrupo / 72) * 100,
-          sub: `${jugadosGrupo} / 72 RESULTADOS · 6 MESAS LIBRES`,
+          titulo:
+            modo.n === 0 ? 'Grupo M listo para empezar' : `Turno ${modo.n} listo para empezar`,
+          prog: (jugadosGrupo / 75) * 100,
+          sub:
+            modo.n === 0
+              ? `${jugadosGrupo} / 75 RESULTADOS · GRUPO M A LAS 18:30 · 1 MESA`
+              : `${jugadosGrupo} / 75 RESULTADOS · 6 MESAS LIBRES`,
         };
       case 'turno':
         return {
-          fase: `FASE DE GRUPOS · TURNO ${modo.n}`,
+          fase: modo.n === 0 ? 'FASE DE GRUPOS · GRUPO M' : `FASE DE GRUPOS · TURNO ${modo.n}`,
           titulo: 'Metiendo resultados',
-          prog: (jugadosGrupo / 72) * 100,
-          sub: `${jugadosGrupo} / 72 RESULTADOS · ${gruposCompletosCnt} GRUPOS COMPLETOS`,
+          prog: (jugadosGrupo / 75) * 100,
+          sub: `${jugadosGrupo} / 75 RESULTADOS · ${gruposCompletosCnt} GRUPOS COMPLETOS`,
         };
       case 'generarElim':
         return modo.fase === 'dieciseisavos'
           ? {
               fase: 'FASE DE GRUPOS',
-              titulo: 'Los 12 grupos, cerrados',
+              titulo: 'Los 13 grupos, cerrados',
               prog: 100,
-              sub: '72 / 72 RESULTADOS · CLASIFICACIÓN SELLADA',
+              sub: '75 / 75 RESULTADOS · CLASIFICACIÓN SELLADA',
             }
           : {
               fase: LABEL_FASE[modo.fase],
@@ -663,7 +682,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
         <div className="pc-note" style={{ marginTop: 10, textAlign: 'left' }}>
           Lo destructivo vive en sus pestañas, con sus propias confirmaciones:
           <br />· <b>Regenerar rondas</b> (borra cruces y apuestas) → Eliminatoria / Semis·Final
-          <br />· <b>Regenerar los 72 partidos</b> y <b>vaciar el sorteo</b> → Equipos
+          <br />· <b>Regenerar los 75 partidos</b> y <b>vaciar el sorteo</b> → Equipos
         </div>
       )}
 
@@ -703,22 +722,23 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
             </div>
             <div className="pc-act-h">Generar los partidos de grupo</div>
             <div className="pc-act-p">
-              Se crearán los 6 cruces de cada grupo (72 en total) con las asignaciones actuales.
+              Se crearán los cruces de cada grupo (75 en total: 6 por grupo de 4 y 3 del grupo M)
+              con las asignaciones actuales.
             </div>
             <ConfirmButton
               className="pc-act-btn"
-              question="Crear los 72 partidos de la fase de grupos (6 por grupo). ¿Seguir?"
+              question="Crear los 75 partidos de la fase de grupos (6 por grupo, 3 el grupo M). ¿Seguir?"
               busy={accion}
               busyLabel="Generando…"
               onConfirm={() => void generar72()}
             >
-              Generar 72 partidos
+              Generar 75 partidos
             </ConfirmButton>
           </div>
         );
 
       case 'iniciarTurno': {
-        const letras = modo.n === 1 ? 'A–F' : 'G–L';
+        const letras = modo.n === 0 ? 'M' : modo.n === 1 ? 'A–F' : 'G–L';
         return (
           <div className="pc-act">
             <div className="pc-act-l">
@@ -726,10 +746,12 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
               Siguiente paso
             </div>
             <div className="pc-act-h">
-              Iniciar Turno {modo.n} · grupos {letras}
+              {modo.n === 0 ? 'Empezar el Grupo M · 18:30' : `Iniciar Turno ${modo.n} · grupos ${letras}`}
             </div>
             <div className="pc-act-p">
-              {modo.n === 1 ? (
+              {modo.n === 0 ? (
+                'El grupo M juega sus 3 partidos en una mesa a las 18:30, antes del turno 1. Pasan su 1º y su 2º.'
+              ) : modo.n === 1 ? (
                 <>
                   Se abren las 6 mesas. <b>Esto cierra la porra de grupos</b> y ya nadie podrá
                   apostar los ganadores de grupo.
@@ -741,16 +763,18 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
             <ConfirmButton
               className="pc-act-btn"
               question={
-                modo.n === 1
-                  ? 'Iniciar el Turno 1 abre los grupos A–F y CIERRA la porra de grupos (irreversible). ¿Seguir?'
-                  : 'Iniciar el Turno 2 abre los grupos G–L. ¿Seguir?'
+                modo.n === 0
+                  ? 'Abrir el grupo M: sus 3 partidos, en una mesa a las 18:30. ¿Seguir?'
+                  : modo.n === 1
+                    ? 'Iniciar el Turno 1 abre los grupos A–F y CIERRA la porra de grupos (irreversible). ¿Seguir?'
+                    : 'Iniciar el Turno 2 abre los grupos G–L. ¿Seguir?'
               }
               confirmLabel={modo.n === 1 ? 'Sí, iniciar y cerrar porra' : 'Sí, iniciar'}
               busy={accion}
               busyLabel="Iniciando…"
               onConfirm={() => void iniciarTurno(modo.n)}
             >
-              Iniciar Turno {modo.n}
+              {modo.n === 0 ? 'Iniciar Grupo M' : `Iniciar Turno ${modo.n}`}
             </ConfirmButton>
           </div>
         );
@@ -797,7 +821,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
             </div>
             <div className="pc-act-p">
               {f === 'dieciseisavos'
-                ? 'Se calculan los 32 clasificados (12 primeros, 12 segundos y los 8 mejores terceros) y se emparejan por ranking. '
+                ? 'Se calculan los 32 clasificados (13 primeros, 13 segundos y los 6 mejores terceros; el 3º del grupo M no entra) y se emparejan por ranking. '
                 : `Se cruzan los ganadores de la ronda anterior. `}
               <b>Nadie lo verá hasta que confirmes.</b>
             </div>

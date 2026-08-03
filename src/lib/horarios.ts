@@ -53,6 +53,9 @@ export function horaDeFase(nombre: string, fases?: FaseConHora[]): string | null
 // eliminatoria las mesas se cruzan y solo vale la ventana de fase).
 export const MINUTOS_POR_CRUCE_GRUPO = 10;
 export const MINUTOS_ENTRE_TURNOS = 60;
+// El grupo M (turno 0, 3 equipos) juega en una mesa media hora antes del
+// turno 1: 18:30, 18:40 y 18:50 con las constantes.
+export const MINUTOS_ANTES_GRUPO_M = 30;
 
 const aMinutos = (hhmm: string): number => {
   const [h, m] = hhmm.split(':').map(Number);
@@ -62,9 +65,11 @@ const aHora = (min: number): string =>
   `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
 /** Inicio del turno: el 1 es la hora real de la fase de grupos si está fijada
-    (si no, la ventana prevista); el 2 es siempre turno 1 + 60 min. */
+    (si no, la ventana prevista); el 2 es siempre turno 1 + 60 min y el 0
+    (grupo M) turno 1 − 30 min. */
 export function horaDeTurno(turno: number, fases?: FaseConHora[]): string {
   const inicioT1 = horaDeFase('grupos', fases) ?? HORARIOS.turno1;
+  if (turno === 0) return aHora(aMinutos(inicioT1) - MINUTOS_ANTES_GRUPO_M);
   return turno === 2 ? aHora(aMinutos(inicioT1) + MINUTOS_ENTRE_TURNOS) : inicioT1;
 }
 
