@@ -283,7 +283,10 @@ export default function TorneoApp() {
           </div>
         ) : (
           <>
-            <AvisosTorneo />
+            <AvisosTorneo
+              nEquipos={equipos.filter((e) => e.grupo_id != null).length}
+              nGrupos={grupos.length}
+            />
             {/* La porra se queda montada (oculta) al cambiar de pestaña: así
                 no se pierden las selecciones aún sin confirmar. */}
             <div style={{ display: tab === 'porra' ? undefined : 'none' }}>
@@ -350,13 +353,18 @@ export default function TorneoApp() {
 }
 
 // Avisos públicos: bloque plegable, cerrado por defecto. Contexto, no protagonista.
-function AvisosTorneo() {
+// Los totales llegan de la BD: nada de números a fuego que caduquen con las bajas.
+function AvisosTorneo({ nEquipos, nGrupos }: { nEquipos: number; nGrupos: number }) {
   return (
     <details className="avisos">
       <summary>INFO DEL TORNEO · NORMAS</summary>
       <div className="av">
         <div className="avt">PLAZAS COMPLETAS</div>
-        <p>13 grupos, 50 equipos y un solo campeón.</p>
+        <p>
+          {nGrupos > 0 && nEquipos > 0
+            ? `${nGrupos} grupos, ${nEquipos} equipos y un solo campeón.`
+            : 'Un solo campeón.'}
+        </p>
       </div>
       <div className="av">
         <div className="avt">GRUPOS DE 3</div>

@@ -15,7 +15,6 @@ import { vigilar } from './red';
 // AdminPanel comprueba que el cliente existe antes de montar esta pestaña.
 const sb = supabase!;
 
-const TOTAL_PLAZAS = 50; // 11 grupos de 4 + 2 de 3 (bajas de última hora)
 const NUM_GRUPOS = 13; // A–L (1-12) + M (13)
 const POSICIONES = [1, 2, 3, 4] as const;
 // Un grupo está listo con 3 o 4 equipos en posiciones seguidas desde la 1:
@@ -356,11 +355,10 @@ export default function Equipos() {
 
   return (
     <>
+      {/* sin denominador a fuego: el total de plazas ES el de equipos activos */}
       <p className="eq-resumen">
-        <b>
-          {activos.length}/{TOTAL_PLAZAS}
-        </b>{' '}
-        inscritos · <b>{pagados}</b> pagados · <b>{enEspera.length}</b> en lista de espera
+        <b>{activos.length}</b> inscritos · <b>{pagados}</b> pagados · <b>{enEspera.length}</b> en
+        lista de espera
       </p>
 
       <div className="eq-block">
@@ -460,7 +458,7 @@ export default function Equipos() {
         <p className="pc-gtitle">Sorteo</p>
         <p className="eq-count">
           <b>
-            {asignados}/{TOTAL_PLAZAS}
+            {asignados}/{activos.length}
           </b>{' '}
           asignados a grupo
         </p>

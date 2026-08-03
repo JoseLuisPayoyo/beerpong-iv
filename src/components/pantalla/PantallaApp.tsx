@@ -432,7 +432,12 @@ export default function PantallaApp() {
         <div className="foot">
           <span className="l">6 AGO · POLIDEPORTIVO · CABRA DEL SANTO CRISTO</span>
           <span className="c">{marco.foot}</span>
-          <span className="l">IV EDICIÓN · 50 EQUIPOS</span>
+          <span className="l">
+            {/* total real de la BD; sin datos aún, solo la edición */}
+            IV EDICIÓN
+            {(datos?.equipos.filter((e) => e.grupo_id != null).length ?? 0) > 0 &&
+              ` · ${datos!.equipos.filter((e) => e.grupo_id != null).length} EQUIPOS`}
+          </span>
         </div>
       </div>
 
@@ -455,6 +460,9 @@ function Bienvenida({ datos }: { datos: Datos | null }) {
   // Ventana del horario oficial (src/lib/horarios.ts); si el admin fijó
   // fases.hora_inicio para los grupos, esa manda.
   const hora = horaDeFase('grupos', datos?.fases);
+  // Totales de la BD, nunca a fuego: equipos con grupo y grupos existentes.
+  const nEquipos = datos?.equipos.filter((e) => e.grupo_id != null).length ?? 0;
+  const nGrupos = datos?.grupos.length ?? 0;
   return (
     <div className="wel">
       <div className="big">
@@ -462,14 +470,18 @@ function Bienvenida({ datos }: { datos: Datos | null }) {
       </div>
       <div className="sub">EMPEZAMOS A LAS {hora}</div>
       <div className="row">
-        <div className="st">
-          <div className="v">50</div>
-          <div className="k">EQUIPOS</div>
-        </div>
-        <div className="st">
-          <div className="v">13</div>
-          <div className="k">GRUPOS</div>
-        </div>
+        {nEquipos > 0 && (
+          <div className="st">
+            <div className="v">{nEquipos}</div>
+            <div className="k">EQUIPOS</div>
+          </div>
+        )}
+        {nGrupos > 0 && (
+          <div className="st">
+            <div className="v">{nGrupos}</div>
+            <div className="k">GRUPOS</div>
+          </div>
+        )}
         <div className="st">
           <div className="v">6</div>
           <div className="k">MESAS</div>
