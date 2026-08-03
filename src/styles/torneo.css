@@ -476,6 +476,9 @@ body::before {
   font-size: 13.5px;
   font-weight: 500;
   color: var(--cr);
+  /* columna mote + jugadores; min-width 0 para que la elipsis del .np corte */
+  flex: 1;
+  min-width: 0;
 }
 .team.sel {
   border-color: var(--or);

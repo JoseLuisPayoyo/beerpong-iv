@@ -123,6 +123,17 @@ export default function VistaPorra({
     };
   }, [sesion, onSesion]);
 
+  // «Nombre1 · Nombre2» bajo el mote (como en la pestaña Grupos): la gente
+  // conoce a las personas, no los motes. Sale de equipos_publicos: sin teléfonos.
+  const jugadores = useMemo(() => {
+    const m = new Map<Id, string>();
+    for (const e of equipos) {
+      const j = [e.participante_1, e.participante_2].filter(Boolean).join(' · ');
+      if (j) m.set(e.id, j);
+    }
+    return (id: Id | null) => (id != null ? (m.get(id) ?? null) : null);
+  }, [equipos]);
+
   const nombre = useMemo(() => {
     const m = new Map<Id, string>();
     for (const e of equipos) m.set(e.id, e.nombre_equipo);
@@ -354,6 +365,7 @@ export default function VistaPorra({
               <EquipoOpcion
                 key={String(e.id)}
                 nombre={e.nombre_equipo}
+                jugadores={jugadores(e.id)}
                 sel={(faseAbierta ? pickDe(`g:${g.id}`) : pickGuardado(`g:${g.id}`)) === e.id}
                 interactivo={faseAbierta}
                 onPick={() => elegir(`g:${g.id}`, e.id)}
@@ -388,6 +400,7 @@ export default function VistaPorra({
                 <EquipoOpcion
                   key={j}
                   nombre={nombre(equipoId) ?? 'Por determinar'}
+                  jugadores={jugadores(equipoId)}
                   sel={
                     equipoId != null &&
                     (interactivo ? pickDe(`p:${c.id}`) : pickGuardado(`p:${c.id}`)) === equipoId
@@ -430,27 +443,32 @@ function TarjetaCuenta({ horaInicio, desfase }: { horaInicio: string; desfase: n
 
 function EquipoOpcion({
   nombre,
+  jugadores,
   sel,
   interactivo,
   onPick,
 }: {
   nombre: string;
+  jugadores: string | null; // «Nombre1 · Nombre2», null si no hay equipo aún
   sel: boolean;
   interactivo: boolean;
   onPick: () => void;
 }) {
+  const cuerpo = (
+    <>
+      <span className="rd" />
+      <span className="tn">
+        <div>{nombre}</div>
+        {jugadores && <div className="np">{jugadores}</div>}
+      </span>
+    </>
+  );
   if (!interactivo) {
-    return (
-      <div className={`team ro${sel ? ' sel' : ''}`}>
-        <span className="rd" />
-        <span className="tn">{nombre}</span>
-      </div>
-    );
+    return <div className={`team ro${sel ? ' sel' : ''}`}>{cuerpo}</div>;
   }
   return (
     <button className={`team${sel ? ' sel' : ''}`} aria-pressed={sel} onClick={onPick}>
-      <span className="rd" />
-      <span className="tn">{nombre}</span>
+      {cuerpo}
     </button>
   );
 }
