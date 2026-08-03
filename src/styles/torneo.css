@@ -1163,22 +1163,159 @@ body::before {
   }
 }
 
-/* ==== FOTOS (galería) ==== */
-.fgrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 7px;
-  margin: 10px 0 20px;
+/* ==== FOTOS: línea temporal de las ediciones (reference/beerpong-timeline.html) ==== */
+.fhead {
+  margin-bottom: 24px;
 }
-@media (min-width: 700px) {
-  .fgrid {
-    grid-template-columns: repeat(3, 1fr);
+.feyebrow {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  color: var(--am);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.feyebrow::before {
+  content: '';
+  width: 20px;
+  height: 2px;
+  background: var(--am);
+}
+.fh1 {
+  font-family: var(--dp);
+  font-size: clamp(34px, 10vw, 46px);
+  font-weight: 400;
+  line-height: 0.92;
+  text-transform: uppercase;
+  margin-top: 10px;
+  color: var(--cr);
+}
+.fh1 i {
+  color: var(--or);
+  font-style: normal;
+}
+.fsub {
+  font-size: 14px;
+  color: var(--mu);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+/* la línea y sus hitos */
+.ftl {
+  position: relative;
+  padding-left: 34px;
+}
+.ftl::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 6px;
+  bottom: 40px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--mu), var(--or) 55%, var(--pk));
+  opacity: 0.5;
+}
+.fmil {
+  position: relative;
+  margin-bottom: 46px;
+}
+.fdot {
+  position: absolute;
+  left: -34px;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 3px solid var(--or);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fdot i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--or);
+}
+/* el hito actual, en verde y con el punto parpadeando */
+.fmil.now .fdot {
+  border-color: var(--li);
+}
+.fmil.now .fdot i {
+  background: var(--li);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fmil.now .fdot i {
+    animation: bl 1.6s infinite;
   }
 }
+.fmil.now .fed .num {
+  color: var(--li);
+}
+.fed {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.fed .num {
+  font-family: var(--dp);
+  font-size: 52px;
+  line-height: 0.85;
+  color: var(--or);
+}
+.fed .yr {
+  font-family: var(--mo);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--mu);
+}
+.fplace {
+  font-family: var(--dp);
+  font-size: 24px;
+  text-transform: uppercase;
+  margin-top: 6px;
+  line-height: 1.05;
+  color: var(--cr);
+}
+.fstory {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--mu);
+  margin-top: 12px;
+}
+.fstats {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.fstat {
+  font-family: var(--mo);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--mu);
+  border: 1px solid var(--ln);
+  border-radius: 20px;
+  padding: 6px 11px;
+  text-transform: uppercase;
+}
+
+/* rejilla de 3×3 miniaturas cuadradas */
+.fgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 16px;
+}
 .fbtn {
+  aspect-ratio: 1;
   padding: 0;
   border: 1px solid var(--ln);
-  border-radius: 10px;
+  border-radius: 9px;
   overflow: hidden;
   background: var(--bg2);
   cursor: pointer;
@@ -1186,12 +1323,112 @@ body::before {
 }
 .fbtn img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 .fbtn:focus-visible {
   outline: 2px solid var(--or);
   outline-offset: 2px;
+}
+
+/* tarjeta de campeones, con su marco rojo */
+.fchamp {
+  display: block;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  margin-top: 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid var(--or);
+  background: linear-gradient(160deg, rgba(236, 58, 44, 0.16), rgba(255, 63, 139, 0.08));
+  cursor: pointer;
+}
+div.fchamp {
+  cursor: default;
+}
+.fchamp img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  border-bottom: 1px solid rgba(236, 58, 44, 0.35);
+}
+.fchamp .cap {
+  display: block;
+  padding: 14px 16px;
+}
+.fchamp .k {
+  display: block;
+  font-family: var(--mo);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: var(--am);
+  text-transform: uppercase;
+}
+.fchamp .v {
+  display: block;
+  font-family: var(--dp);
+  font-size: 30px;
+  line-height: 1.05;
+  margin-top: 5px;
+  text-transform: uppercase;
+  color: var(--cr);
+}
+.fchamp:focus-visible {
+  outline: 2px solid var(--or);
+  outline-offset: 2px;
+}
+
+/* el cartel del hito actual */
+.fcartel {
+  margin-top: 16px;
+}
+.fcartel img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 14px;
+  border: 1px solid rgba(182, 217, 76, 0.4);
+}
+.fcartel figcaption {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--li);
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* respaldo si no hay cartel (recuadro del mockup) */
+.fnow {
+  margin-top: 14px;
+  border: 2px dashed rgba(182, 217, 76, 0.4);
+  border-radius: 14px;
+  padding: 20px 16px;
+  text-align: center;
+  background: rgba(182, 217, 76, 0.05);
+}
+.fnow .t {
+  font-family: var(--dp);
+  font-size: 22px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--cr);
+}
+.fnow .d {
+  font-size: 13px;
+  color: var(--mu);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.fnow .led2 {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--li);
+  margin-top: 12px;
 }
 
 /* lightbox casero: foto grande sobre fondo oscuro, pie y controles */

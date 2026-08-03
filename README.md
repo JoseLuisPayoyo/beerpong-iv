@@ -38,17 +38,24 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-## 📷 Galería de /torneo (pestaña Fotos)
+## 📷 Pestaña Fotos de /torneo (línea temporal)
 
-Las fotos viven en `public/galeria/` (grande) y `public/galeria/mini/` (miniatura), y la lista
-que pinta la pestaña está en `src/lib/galeria.ts` (array `FOTOS`). Añadir fotos es añadir líneas
-a ese array; mientras no haya fotos reales hay placeholders SVG.
+La pestaña Fotos es la línea temporal de las ediciones (mockup:
+`reference/beerpong-timeline.html`). Los textos de cada hito se editan en
+`src/lib/ediciones.ts`; las imágenes viven en `public/galeria/` (grande) y
+`public/galeria/mini/` (miniatura), listadas en `src/lib/galeria.ts` (array `FOTOS`,
+autogenerado).
 
-Para meter fotos reales:
+Para añadir o cambiar fotos:
 
-1. Deja las originales en `fotos-originales/` (carpeta **ignorada en git**, no se commitea).
-   El nombre debe empezar por el año: `2023-01.jpg`, `2024-ambiente.png`… (del año sale la
-   edición: 2023 → I, 2024 → II, 2025 → III).
+1. Deja las originales en `fotos-originales/` (carpeta **ignorada en git**, no se commitea),
+   con estos nombres:
+   - `2023-01.jpg` … `2023-09.jpg` → rejilla de esa edición
+   - `2023-campeon.jpg` → la tarjeta de campeones
+   - `cartel-2026.png` → el cartel del hito actual
+
+   Valen jpg, png, webp, avif, tiff y **CR2** (RAW de Canon: el script usa el JPEG de
+   previsualización a resolución completa que lleva embebido).
 2. Ejecuta:
 
    ```sh
@@ -56,11 +63,10 @@ Para meter fotos reales:
    ```
 
    Genera con `sharp` la grande (1600px máx, WebP q80) y la miniatura (400px, q75), y
-   **reescribe el array `FOTOS` de `src/lib/galeria.ts`** con `ancho`/`alto` reales, ordenado
-   por edición. No hay que escribir entradas a mano.
-3. Retoca en `galeria.ts` los `pie` que quieras (son opcionales). Si vuelves a ejecutar el
-   script, los pies ya escritos **se conservan** (se casan por `src`). Borra los SVG de
-   placeholder de `public/galeria/` cuando ya no hagan falta.
+   **reescribe el array `FOTOS` de `src/lib/galeria.ts`** deduciendo año y tipo del nombre.
+   No hay que escribir entradas a mano.
+3. Retoca en `galeria.ts` los `pie` que quieras (son opcionales; salen en el lightbox). Si
+   vuelves a ejecutar el script, los pies ya escritos **se conservan** (se casan por `src`).
 
 ## 👀 Want to learn more?
 
