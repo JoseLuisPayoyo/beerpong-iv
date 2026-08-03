@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FOTOS, edicionDe, type Foto } from '../../lib/galeria';
+import { FOTOS, romanoDe, type Foto } from '../../lib/galeria';
 
 // Pestaña Fotos: prueba social con fotos de ediciones anteriores. La rejilla
 // carga SOLO miniaturas (lazy); la grande se pide únicamente al abrir el
 // lightbox. Este es casero: sin librerías, con teclado (Esc, flechas), cierre
-// tocando fuera y swipe lateral en móvil.
+// tocando fuera y swipe lateral en móvil. Sin contadores de fotos: aquí se
+// enseña ambiente, no números.
 
 export default function VistaFotos() {
-  // Orden de la rejilla: ediciones de la más reciente a la más antigua.
-  const porAño = useMemo(() => {
+  // Ediciones en orden cronológico: primero la I, luego la II, luego la III.
+  const porEdicion = useMemo(() => {
     const m = new Map<number, Foto[]>();
-    for (const f of FOTOS) m.set(f.año, [...(m.get(f.año) ?? []), f]);
-    return [...m.entries()].sort((a, b) => b[0] - a[0]);
+    for (const f of FOTOS) m.set(f.edicion, [...(m.get(f.edicion) ?? []), f]);
+    return [...m.entries()].sort((a, b) => a[0] - b[0]);
   }, []);
-  const lista = useMemo(() => porAño.flatMap(([, fotos]) => fotos), [porAño]);
+  const lista = useMemo(() => porEdicion.flatMap(([, fotos]) => fotos), [porEdicion]);
 
   const [abierta, setAbierta] = useState<number | null>(null); // índice en `lista`
 
@@ -48,27 +49,22 @@ export default function VistaFotos() {
       <div className="sh">
         EL <i>AMBIENTE</i>
       </div>
-      <div className="led" style={{ marginBottom: 14 }}>
-        <span className="dot" />
-        {FOTOS.length} FOTOS · {porAño.length} EDICIONES
-      </div>
 
-      {porAño.map(([año, fotos]) => {
+      {porEdicion.map(([edicion, fotos]) => {
         const desde = indice;
         indice += fotos.length;
-        const ed = edicionDe(año);
+        const año = fotos[0].año;
         return (
-          <div key={año}>
-            <div className="gname">{ed ? `${ed} · ${año}` : año}</div>
-            <div className="gstat">
-              {fotos.length} {fotos.length === 1 ? 'FOTO' : 'FOTOS'}
+          <div key={edicion}>
+            <div className="gname">
+              {romanoDe(edicion)} EDICIÓN · {año}
             </div>
             <div className="fgrid">
               {fotos.map((f, j) => (
                 <button
                   key={f.mini}
                   className="fbtn"
-                  aria-label={`Ver foto: ${f.pie ?? `${año}, foto ${j + 1}`}`}
+                  aria-label={`Ver foto: ${f.pie ?? `Beerpong ${año}`}`}
                   onClick={() => setAbierta(desde + j)}
                 >
                   <img
@@ -87,13 +83,7 @@ export default function VistaFotos() {
       })}
 
       {abierta != null && lista[abierta] && (
-        <Lightbox
-          foto={lista[abierta]}
-          n={abierta + 1}
-          total={lista.length}
-          onCerrar={cerrar}
-          onMover={mover}
-        />
+        <Lightbox foto={lista[abierta]} onCerrar={cerrar} onMover={mover} soloUna={lista.length === 1} />
       )}
     </section>
   );
@@ -101,16 +91,14 @@ export default function VistaFotos() {
 
 function Lightbox({
   foto,
-  n,
-  total,
   onCerrar,
   onMover,
+  soloUna,
 }: {
   foto: Foto;
-  n: number;
-  total: number;
   onCerrar: () => void;
   onMover: (d: number) => void;
+  soloUna: boolean;
 }) {
   const cerrarRef = useRef<HTMLButtonElement>(null);
   const toqueX = useRef<number | null>(null);
@@ -136,13 +124,13 @@ function Lightbox({
     };
   }, []);
 
-  const ed = edicionDe(foto.año);
+  const alt = foto.pie ? `${foto.pie} (${foto.año})` : `Beerpong ${foto.año}`;
   return (
     <div
       className="lb"
       role="dialog"
       aria-modal="true"
-      aria-label={`Foto ${n} de ${total}`}
+      aria-label={alt}
       onClick={(e) => {
         // tocar fuera de la foto/controles cierra
         if (e.target === e.currentTarget) onCerrar();
@@ -165,19 +153,18 @@ function Lightbox({
       <img
         key={foto.src} // remonta al navegar: no se queda la foto anterior debajo
         src={foto.src}
-        alt={foto.pie ? `${foto.pie} (${foto.año})` : `Beerpong ${foto.año}`}
+        alt={alt}
         width={foto.ancho}
         height={foto.alto}
         decoding="async"
       />
       <div className="lb-pie">
-        <span className="ed">{ed ? `${ed} · ${foto.año}` : foto.año}</span>
-        {foto.pie && <span className="tx">{foto.pie}</span>}
-        <span className="cnt">
-          {n} / {total}
+        <span className="ed">
+          {romanoDe(foto.edicion)} EDICIÓN · {foto.año}
         </span>
+        {foto.pie && <span className="tx">{foto.pie}</span>}
       </div>
-      {total > 1 && (
+      {!soloUna && (
         <>
           <button className="lb-nav ant" aria-label="Foto anterior" onClick={() => onMover(-1)}>
             ‹

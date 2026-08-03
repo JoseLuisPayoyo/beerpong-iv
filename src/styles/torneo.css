@@ -1253,10 +1253,6 @@ body::before {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.lb-pie .cnt {
-  color: var(--mu);
-  flex: none;
-}
 .lb-x {
   position: absolute;
   top: calc(10px + env(safe-area-inset-top));

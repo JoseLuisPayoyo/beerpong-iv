@@ -47,17 +47,20 @@ a ese array; mientras no haya fotos reales hay placeholders SVG.
 Para meter fotos reales:
 
 1. Deja las originales en `fotos-originales/` (carpeta **ignorada en git**, no se commitea).
-   Nómbralas empezando por el año: `2025-final.jpg`, `2024-ambiente.png`…
+   El nombre debe empezar por el año: `2023-01.jpg`, `2024-ambiente.png`… (del año sale la
+   edición: 2023 → I, 2024 → II, 2025 → III).
 2. Ejecuta:
 
    ```sh
    node scripts/optimizar-galeria.mjs
    ```
 
-   Genera la grande (1600px máx, WebP q80) y la miniatura (400px, q75) con `sharp`, y escribe
-   por consola las líneas listas para pegar en `FOTOS`, con `ancho`/`alto` reales.
-3. Pega esas líneas en `src/lib/galeria.ts`, rellena los `pie` que quieras y borra las líneas de
-   los placeholders (y sus SVG de `public/galeria/`, si ya no hacen falta).
+   Genera con `sharp` la grande (1600px máx, WebP q80) y la miniatura (400px, q75), y
+   **reescribe el array `FOTOS` de `src/lib/galeria.ts`** con `ancho`/`alto` reales, ordenado
+   por edición. No hay que escribir entradas a mano.
+3. Retoca en `galeria.ts` los `pie` que quieras (son opcionales). Si vuelves a ejecutar el
+   script, los pies ya escritos **se conservan** (se casan por `src`). Borra los SVG de
+   placeholder de `public/galeria/` cuando ya no hagan falta.
 
 ## 👀 Want to learn more?
 
