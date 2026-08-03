@@ -1,5 +1,8 @@
 # build output
 dist/
+
+# fotos originales de la galería (solo se commitean las .webp generadas)
+fotos-originales/
 # generated types
 .astro/
 

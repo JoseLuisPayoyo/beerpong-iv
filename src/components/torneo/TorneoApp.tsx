@@ -8,11 +8,12 @@ import VistaPorra from './VistaPorra';
 import VistaRanking from './VistaRanking';
 import VistaGrupos from './VistaGrupos';
 import VistaCuadro from './VistaCuadro';
+import VistaFotos from './VistaFotos';
 
-type Tab = 'porra' | 'ranking' | 'grupos' | 'cuadro';
+type Tab = 'porra' | 'ranking' | 'grupos' | 'cuadro' | 'fotos';
 type Estado = 'cargando' | 'listo' | 'error';
 
-const TABS_VALIDAS: readonly Tab[] = ['porra', 'ranking', 'grupos', 'cuadro'];
+const TABS_VALIDAS: readonly Tab[] = ['porra', 'ranking', 'grupos', 'cuadro', 'fotos'];
 
 export default function TorneoApp() {
   const [estado, setEstado] = useState<Estado>('cargando');
@@ -253,6 +254,8 @@ export default function TorneoApp() {
               <VistaCuadro partidos={partidos} equipos={equipos} fases={fases} />
             ) : tab === 'ranking' ? (
               <VistaRanking ranking={ranking} sesion={sesion} />
+            ) : tab === 'fotos' ? (
+              <VistaFotos />
             ) : null}
           </>
         )}
@@ -283,6 +286,12 @@ export default function TorneoApp() {
         <NavBtn tab="cuadro" actual={tab} onClick={cambiarTab} label="Cuadro">
           <svg viewBox="0 0 24 24">
             <path d="M5 5v4h6M5 15v4h6M11 7h4v10h-4M15 12h4" />
+          </svg>
+        </NavBtn>
+        <NavBtn tab="fotos" actual={tab} onClick={cambiarTab} label="Fotos">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 8.5h3.2L9 6h6l1.8 2.5H20v10.5H4z" />
+            <circle cx="12" cy="13.2" r="3.4" />
           </svg>
         </NavBtn>
       </nav>

@@ -38,6 +38,27 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
+## 📷 Galería de /torneo (pestaña Fotos)
+
+Las fotos viven en `public/galeria/` (grande) y `public/galeria/mini/` (miniatura), y la lista
+que pinta la pestaña está en `src/lib/galeria.ts` (array `FOTOS`). Añadir fotos es añadir líneas
+a ese array; mientras no haya fotos reales hay placeholders SVG.
+
+Para meter fotos reales:
+
+1. Deja las originales en `fotos-originales/` (carpeta **ignorada en git**, no se commitea).
+   Nómbralas empezando por el año: `2025-final.jpg`, `2024-ambiente.png`…
+2. Ejecuta:
+
+   ```sh
+   node scripts/optimizar-galeria.mjs
+   ```
+
+   Genera la grande (1600px máx, WebP q80) y la miniatura (400px, q75) con `sharp`, y escribe
+   por consola las líneas listas para pegar en `FOTOS`, con `ancho`/`alto` reales.
+3. Pega esas líneas en `src/lib/galeria.ts`, rellena los `pie` que quieras y borra las líneas de
+   los placeholders (y sus SVG de `public/galeria/`, si ya no hacen falta).
+
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
