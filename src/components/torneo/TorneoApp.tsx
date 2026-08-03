@@ -297,11 +297,7 @@ function AvisosTorneo() {
       <summary>INFO DEL TORNEO · NORMAS</summary>
       <div className="av">
         <div className="avt">PLAZAS COMPLETAS</div>
-        <p>
-          Las 51 plazas están cubiertas. Puedes apuntarte a la{' '}
-          <a href="/?landing=1#inscripcion">lista de espera</a>: si se cae algún equipo, avisamos
-          por orden.
-        </p>
+        <p>Las 51 plazas están cubiertas. 13 grupos, 51 equipos y un solo campeón.</p>
       </div>
       <div className="av">
         <div className="avt">GRUPO M · 18:30</div>
@@ -310,15 +306,6 @@ function AvisosTorneo() {
           las 18:30, antes del turno 1, y pasan a la eliminatoria su 1º y su 2º, como en todos los
           grupos. Su 3º no entra en el repesque de mejores terceros: juega un partido menos que el
           resto y no sería comparable.
-        </p>
-      </div>
-      <div className="av">
-        <div className="avt">EQUIPOS DE MENORES</div>
-        <p>
-          Beerpong IV es un torneo con alcohol. Si hay equipos en lista de espera con los dos
-          miembros mayores de edad, estos tienen preferencia sobre los equipos con algún miembro
-          menor: se sortearán tantos equipos de menores como plazas hagan falta para dar entrada a
-          los adultos que esperan. El sorteo se hará antes del sorteo de grupos, el 3 de agosto.
         </p>
       </div>
     </details>
