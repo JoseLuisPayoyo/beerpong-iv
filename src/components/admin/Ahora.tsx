@@ -11,7 +11,7 @@ import {
   filasSiguienteRonda,
   horaCorta,
   mapaSemillas,
-  mesaDeGrupo,
+  mesaDePartidoGrupo,
   type FaseElim,
 } from './acciones';
 import ConfirmarCruces, { RetrasarHora } from './ConfirmarCruces';
@@ -169,9 +169,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
     let n = 0;
     for (let gid = 1; gid <= 13; gid++) {
       const posiciones = posPorGrupo.get(gid);
-      const tam = gid === 13 ? 3 : 4; // el grupo M tiene 3 equipos
-      if (posiciones && Array.from({ length: tam }, (_, i) => i + 1).every((x) => posiciones.has(x)))
-        n++;
+      if (posiciones && [1, 2, 3, 4].every((x) => posiciones.has(x))) n++;
     }
     return n;
   }, [posPorGrupo]);
@@ -260,7 +258,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
       return;
     }
     await cargar();
-    setAviso({ tipo: 'ok', texto: 'Creados los 75 partidos de la fase de grupos.' });
+    setAviso({ tipo: 'ok', texto: 'Creados los 78 partidos de la fase de grupos.' });
   }
 
   async function iniciarTurno(n: number) {
@@ -525,12 +523,12 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
           fase: 'ANTES DE EMPEZAR',
           titulo: 'Faltan equipos por colocar',
           prog: 0,
-          sub: `${asignados} / 51 ASIGNADOS · ${sinGrupo} SIN GRUPO`,
+          sub: `${asignados} / 52 ASIGNADOS · ${sinGrupo} SIN GRUPO`,
         };
       case 'generar72':
         return {
           fase: 'ANTES DE EMPEZAR',
-          titulo: '51 equipos, 13 grupos',
+          titulo: '52 equipos, 13 grupos',
           prog: 0,
           sub: 'GRUPOS A–M COMPLETOS · PARTIDOS SIN GENERAR',
         };
@@ -539,18 +537,18 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
           fase: 'FASE DE GRUPOS',
           titulo:
             modo.n === 0 ? 'Grupo M listo para empezar' : `Turno ${modo.n} listo para empezar`,
-          prog: (jugadosGrupo / 75) * 100,
+          prog: (jugadosGrupo / 78) * 100,
           sub:
             modo.n === 0
-              ? `${jugadosGrupo} / 75 RESULTADOS · GRUPO M A LAS 18:30 · 1 MESA`
-              : `${jugadosGrupo} / 75 RESULTADOS · 6 MESAS LIBRES`,
+              ? `${jugadosGrupo} / 78 RESULTADOS · GRUPO M A LAS 18:30 · 2 MESAS`
+              : `${jugadosGrupo} / 78 RESULTADOS · 6 MESAS LIBRES`,
         };
       case 'turno':
         return {
           fase: modo.n === 0 ? 'FASE DE GRUPOS · GRUPO M' : `FASE DE GRUPOS · TURNO ${modo.n}`,
           titulo: 'Metiendo resultados',
-          prog: (jugadosGrupo / 75) * 100,
-          sub: `${jugadosGrupo} / 75 RESULTADOS · ${gruposCompletosCnt} GRUPOS COMPLETOS`,
+          prog: (jugadosGrupo / 78) * 100,
+          sub: `${jugadosGrupo} / 78 RESULTADOS · ${gruposCompletosCnt} GRUPOS COMPLETOS`,
         };
       case 'generarElim':
         return modo.fase === 'dieciseisavos'
@@ -558,7 +556,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
               fase: 'FASE DE GRUPOS',
               titulo: 'Los 13 grupos, cerrados',
               prog: 100,
-              sub: '75 / 75 RESULTADOS · CLASIFICACIÓN SELLADA',
+              sub: '78 / 78 RESULTADOS · CLASIFICACIÓN SELLADA',
             }
           : {
               fase: LABEL_FASE[modo.fase],
@@ -682,7 +680,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
         <div className="pc-note" style={{ marginTop: 10, textAlign: 'left' }}>
           Lo destructivo vive en sus pestañas, con sus propias confirmaciones:
           <br />· <b>Regenerar rondas</b> (borra cruces y apuestas) → Eliminatoria / Semis·Final
-          <br />· <b>Regenerar los 75 partidos</b> y <b>vaciar el sorteo</b> → Equipos
+          <br />· <b>Regenerar los 78 partidos</b> y <b>vaciar el sorteo</b> → Equipos
         </div>
       )}
 
@@ -722,17 +720,16 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
             </div>
             <div className="pc-act-h">Generar los partidos de grupo</div>
             <div className="pc-act-p">
-              Se crearán los cruces de cada grupo (75 en total: 6 por grupo de 4 y 3 del grupo M)
-              con las asignaciones actuales.
+              Se crearán los 6 cruces de cada grupo (78 en total) con las asignaciones actuales.
             </div>
             <ConfirmButton
               className="pc-act-btn"
-              question="Crear los 75 partidos de la fase de grupos (6 por grupo, 3 el grupo M). ¿Seguir?"
+              question="Crear los 78 partidos de la fase de grupos (6 por grupo). ¿Seguir?"
               busy={accion}
               busyLabel="Generando…"
               onConfirm={() => void generar72()}
             >
-              Generar 75 partidos
+              Generar 78 partidos
             </ConfirmButton>
           </div>
         );
@@ -750,7 +747,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
             </div>
             <div className="pc-act-p">
               {modo.n === 0 ? (
-                'El grupo M juega sus 3 partidos en una mesa a las 18:30, antes del turno 1. Pasan su 1º y su 2º.'
+                'El grupo M juega sus 6 partidos en dos mesas a las 18:30, antes del turno 1. Como todos: pasan su 1º y su 2º, y su 3º pelea el repesque.'
               ) : modo.n === 1 ? (
                 <>
                   Se abren las 6 mesas. <b>Esto cierra la porra de grupos</b> y ya nadie podrá
@@ -764,7 +761,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
               className="pc-act-btn"
               question={
                 modo.n === 0
-                  ? 'Abrir el grupo M: sus 3 partidos, en una mesa a las 18:30. ¿Seguir?'
+                  ? 'Abrir el grupo M: sus 6 partidos, en dos mesas a las 18:30. ¿Seguir?'
                   : modo.n === 1
                     ? 'Iniciar el Turno 1 abre los grupos A–F y CIERRA la porra de grupos (irreversible). ¿Seguir?'
                     : 'Iniciar el Turno 2 abre los grupos G–L. ¿Seguir?'
@@ -821,7 +818,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
             </div>
             <div className="pc-act-p">
               {f === 'dieciseisavos'
-                ? 'Se calculan los 32 clasificados (13 primeros, 13 segundos y los 6 mejores terceros; el 3º del grupo M no entra) y se emparejan por ranking. '
+                ? 'Se calculan los 32 clasificados (13 primeros, 13 segundos y los 6 mejores terceros) y se emparejan por ranking. '
                 : `Se cruzan los ganadores de la ronda anterior. `}
               <b>Nadie lo verá hasta que confirmes.</b>
             </div>
@@ -1035,7 +1032,8 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
   function filaTrabajo(p: Partido) {
     const a = nombre(p.equipo_a);
     const b = nombre(p.equipo_b);
-    const mesa = p.fase === 'grupo' ? mesaDeGrupo(p.grupo_id ?? 1) : (p.mesa ?? null);
+    const mesa =
+      p.fase === 'grupo' ? mesaDePartidoGrupo(p.grupo_id ?? 1, p.orden) : (p.mesa ?? null);
     const letra = p.fase === 'grupo' ? grupos.find((g) => g.id === p.grupo_id)?.letra : null;
 
     if (editando === p.id) {

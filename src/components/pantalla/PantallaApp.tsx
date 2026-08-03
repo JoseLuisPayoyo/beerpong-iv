@@ -432,7 +432,7 @@ export default function PantallaApp() {
         <div className="foot">
           <span className="l">6 AGO · POLIDEPORTIVO · CABRA DEL SANTO CRISTO</span>
           <span className="c">{marco.foot}</span>
-          <span className="l">IV EDICIÓN · 51 EQUIPOS</span>
+          <span className="l">IV EDICIÓN · 52 EQUIPOS</span>
         </div>
       </div>
 
@@ -463,7 +463,7 @@ function Bienvenida({ datos }: { datos: Datos | null }) {
       <div className="sub">EMPEZAMOS A LAS {hora}</div>
       <div className="row">
         <div className="st">
-          <div className="v">51</div>
+          <div className="v">52</div>
           <div className="k">EQUIPOS</div>
         </div>
         <div className="st">
@@ -508,13 +508,12 @@ function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
     standings.set(g.id, clasificar(ids, partidosGrupo.filter((p) => p.grupo_id === g.id)));
   }
   const sellado = grupos.length > 0 && grupos.every((g) => g.estado === 'completo');
-  // Bolsa de terceros: solo grupos de 4 (el 3º del grupo M no compite por
-  // plaza) y las plazas que queden hasta 32 (6 con 13 grupos, 8 con 12).
+  // Bolsa de terceros: los 13 compiten (grupos iguales de 4) por las plazas
+  // que queden hasta 32 (6 con 13 grupos, 8 con 12).
   const plazasTerceros = Math.max(0, 32 - grupos.length * 2);
   const pool: { gid: number; st: Standing }[] = [];
   for (const g of grupos) {
     if (g.estado !== 'completo') continue;
-    if ((standings.get(g.id)?.length ?? 0) < 4) continue;
     const tercero = standings.get(g.id)?.[2];
     if (tercero) pool.push({ gid: g.id, st: tercero });
   }
@@ -527,7 +526,6 @@ function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
   const claseFila = (i: number, g: GrupoRow): string => {
     if (i <= 1) return 'q';
     if (i === 2) {
-      if (g.turno === 0) return 'mut'; // 3º del grupo M: sin plaza en juego
       if (g.estado !== 'completo') return 'pv';
       if (mejoresTerceros.has(g.id)) return sellado ? 'q' : 'pv';
       return 'out';
@@ -541,8 +539,7 @@ function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
         const jugados = partidosGrupo.filter(
           (p) => p.grupo_id === g.id && p.estado === 'jugado',
         ).length;
-        const total =
-          partidosGrupo.filter((p) => p.grupo_id === g.id).length || (g.turno === 0 ? 3 : 6);
+        const total = partidosGrupo.filter((p) => p.grupo_id === g.id).length || 6;
         const sub =
           g.estado === 'completo'
             ? `${total}/${total} · CERRADO`

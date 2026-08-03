@@ -20,8 +20,8 @@ create table if not exists public.equipos (
 );
 
 -- ---------------------------------------------------------------------------
--- grupos: 12 grupos de 4 (A–L) en 2 turnos + el grupo M (13) de 3 equipos,
--- que juega a las 18:30 con turno 0. Las 13 filas ya están insertadas
+-- grupos: 13 grupos de 4 (A–L en 2 turnos + el grupo M, que juega a las
+-- 18:30 con turno 0 en dos mesas). Las 13 filas ya están insertadas
 -- (la del grupo M, con db/grupo_m.sql).
 create table if not exists public.grupos (
   id         integer primary key check (id between 1 and 13),

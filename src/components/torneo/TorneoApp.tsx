@@ -306,15 +306,14 @@ function AvisosTorneo() {
       <summary>INFO DEL TORNEO · NORMAS</summary>
       <div className="av">
         <div className="avt">PLAZAS COMPLETAS</div>
-        <p>Las 51 plazas están cubiertas. 13 grupos, 51 equipos y un solo campeón.</p>
+        <p>Las 52 plazas están cubiertas. 13 grupos, 52 equipos y un solo campeón.</p>
       </div>
       <div className="av">
         <div className="avt">GRUPO M · 18:30</div>
         <p>
-          Con los equipos de la lista de espera hay un 13º grupo de 3 equipos: el grupo M. Juega a
-          las 18:30, antes del turno 1, y pasan a la eliminatoria su 1º y su 2º, como en todos los
-          grupos. Su 3º no entra en el repesque de mejores terceros: juega un partido menos que el
-          resto y no sería comparable.
+          El grupo M juega a las 18:30, media hora antes que el resto, en dos mesas. Funciona
+          igual que todos los demás: pasan su 1º y su 2º, y su 3º compite por el repesque de
+          mejores terceros como cualquier otro.
         </p>
       </div>
     </details>

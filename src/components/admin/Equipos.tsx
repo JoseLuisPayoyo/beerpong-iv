@@ -15,14 +15,15 @@ import { vigilar } from './red';
 // AdminPanel comprueba que el cliente existe antes de montar esta pestaña.
 const sb = supabase!;
 
-const TOTAL_PLAZAS = 51; // 12 grupos de 4 + el grupo M de 3
+const TOTAL_PLAZAS = 52; // 13 grupos de 4 (A–L + M)
 const NUM_GRUPOS = 13; // A–L (1-12) + M (13)
 const POSICIONES = [1, 2, 3, 4] as const;
-// El grupo M (13) tiene 3 equipos; el resto, 4.
-const tamGrupo = (gid: number) => (gid === 13 ? 3 : 4);
+// Todos los grupos son de 4 (el M también, desde que entró su cuarto equipo).
+// El helper se queda por si algún año vuelve a haber un grupo cojo.
+const tamGrupo = (_gid: number) => 4;
 const posicionesDe = (gid: number) => POSICIONES.slice(0, tamGrupo(gid));
-// Total de partidos de grupo: 6 por grupo de 4 + 3 del grupo M = 75.
-const TOTAL_PARTIDOS = 75;
+// Total de partidos de grupo: 6 × 13 grupos = 78.
+const TOTAL_PARTIDOS = 78;
 
 type Id = string | number;
 type Estado = 'confirmado' | 'espera' | 'pagado' | 'rechazado';
@@ -61,7 +62,7 @@ function barajar<T>(lista: T[]): T[] {
 
 export default function Equipos() {
   const [equipos, setEquipos] = useState<Equipo[] | null>(null);
-  const [hayPartidos, setHayPartidos] = useState(false); // ya existen los 75 de grupos
+  const [hayPartidos, setHayPartidos] = useState(false); // ya existen los 78 de grupos
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [aviso, setAviso] = useAviso();
   const [errOp, setErrOp] = useState<ErrorOp | null>(null);
@@ -193,7 +194,7 @@ export default function Equipos() {
     const huecos: Array<{ gid: number; pos: number }> = [];
     for (const pos of POSICIONES) {
       for (let gid = 1; gid <= NUM_GRUPOS; gid++) {
-        if (pos > tamGrupo(gid)) continue; // el grupo M no tiene posición 4
+        if (pos > tamGrupo(gid)) continue;
         if (!posicionesPorGrupo.get(gid)?.has(pos)) huecos.push({ gid, pos });
       }
     }
@@ -257,7 +258,7 @@ export default function Equipos() {
     setErrOp(null);
     setAccion('partidos');
 
-    // Cada grupo debe tener sus equipos justos (4, o 3 en el grupo M)
+    // Cada grupo debe tener sus 4 equipos justos
     for (let gid = 1; gid <= NUM_GRUPOS; gid++) {
       const delGrupo = activos.filter((e) => e.grupo_id === gid);
       if (delGrupo.length !== tamGrupo(gid)) {
@@ -485,7 +486,7 @@ export default function Equipos() {
         {!hayPartidos ? (
           <ConfirmButton
             className="pc-btn primary block"
-            question={`Crear los ${TOTAL_PARTIDOS} partidos de la fase de grupos (6 por grupo, 3 el grupo M).`}
+            question={`Crear los ${TOTAL_PARTIDOS} partidos de la fase de grupos (6 por grupo).`}
             disabled={gruposCompletos !== NUM_GRUPOS || accion !== null}
             busy={accion === 'partidos'}
             busyLabel="Creando…"
@@ -496,7 +497,7 @@ export default function Equipos() {
         ) : (
           <>
             {/* Para cuando se cambia a alguien de grupo DESPUÉS de generar:
-                borra los 75 (y la eliminatoria si existiera) y los recrea
+                borra los 78 (y la eliminatoria si existiera) y los recrea
                 con las asignaciones actuales. */}
             <BotonRegenerar
               etiqueta="Regenerar partidos de grupo"
@@ -517,9 +518,7 @@ export default function Equipos() {
           </>
         )}
         {gruposCompletos !== NUM_GRUPOS && (
-          <p className="pc-hint">
-            Se activa cuando los 13 grupos tengan sus equipos (4 por grupo, 3 el M).
-          </p>
+          <p className="pc-hint">Se activa cuando los 13 grupos tengan sus 4 equipos.</p>
         )}
       </div>
 

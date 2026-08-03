@@ -27,7 +27,7 @@ type EstadoChip = 'abierta' | 'cerrada' | 'bloqueada';
 //   ABIERTA   → porra_abierta y queda al menos un cruce en `pendiente`.
 //   CERRADA   → lo demás (ya empezó, ya terminó o la bandera está apagada).
 // 'grupos' va aparte: se apuesta por ganador de grupo y abre ANTES de que
-// existan los 75 partidos, así que está abierta mientras la bandera lo diga
+// existan los 78 partidos, así que está abierta mientras la bandera lo diga
 // y no haya arrancado ningún partido de grupos.
 function estadoChip(fase: FasePorra, fases: FaseRow[], partidos: Partido[]): EstadoChip {
   const abiertaFlag = fases.find((f) => f.nombre === fase)?.porra_abierta ?? false;

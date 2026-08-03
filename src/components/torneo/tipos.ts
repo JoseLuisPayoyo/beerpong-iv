@@ -12,7 +12,7 @@ export type Fase =
   | 'final';
 
 export interface Grupo {
-  id: number; // 1-13 (13 = grupo M, de 3 equipos)
+  id: number; // 1-13 (13 = grupo M)
   letra: string; // 'A'-'M'
   turno: number; // 0 = grupo M (18:30), 1 = A-F, 2 = G-L
   estado: 'pendiente' | 'en_curso' | 'completo';

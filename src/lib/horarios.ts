@@ -65,8 +65,10 @@ export function horaDeFase(nombre: string, fases?: FaseConHora[]): string | null
 // eliminatoria las mesas se cruzan y solo vale la ventana de fase).
 export const MINUTOS_POR_CRUCE_GRUPO = 10;
 export const MINUTOS_ENTRE_TURNOS = 60;
-// El grupo M (turno 0, 3 equipos) juega en una mesa media hora antes del
-// turno 1: 18:30, 18:40 y 18:50 con las constantes.
+// El grupo M (turno 0) juega media hora antes del turno 1, en DOS mesas:
+// sus 6 cruces van en 3 franjas de 2 simultáneos (18:30, 18:40 y 18:50 con
+// las constantes; los pares de cada franja son disjuntos por el orden
+// round-robin de paresDeGrupo).
 export const MINUTOS_ANTES_GRUPO_M = 30;
 
 const aMinutos = (hhmm: string): number => {
@@ -85,12 +87,15 @@ export function horaDeTurno(turno: number, fases?: FaseConHora[]): string {
   return turno === 2 ? aHora(aMinutos(inicioT1) + MINUTOS_ENTRE_TURNOS) : inicioT1;
 }
 
-/** Hora PREVISTA de un cruce de grupo: inicio de su turno + orden × 10 min.
-    (orden 0–5 → 19:00, 19:10, … / 20:00, 20:10, … con las constantes.) */
+/** Hora PREVISTA de un cruce de grupo: inicio de su turno + orden × 10 min
+    (orden 0–5 → 19:00, 19:10, … / 20:00, 20:10, … con las constantes).
+    En el grupo M (turno 0) se juega de dos en dos: franja = orden ÷ 2
+    (0–5 → 18:30, 18:30, 18:40, 18:40, 18:50, 18:50). */
 export function horaDePartidoGrupo(
   turno: number,
   orden: number,
   fases?: FaseConHora[],
 ): string {
-  return aHora(aMinutos(horaDeTurno(turno, fases)) + orden * MINUTOS_POR_CRUCE_GRUPO);
+  const paso = turno === 0 ? Math.floor(orden / 2) : orden;
+  return aHora(aMinutos(horaDeTurno(turno, fases)) + paso * MINUTOS_POR_CRUCE_GRUPO);
 }

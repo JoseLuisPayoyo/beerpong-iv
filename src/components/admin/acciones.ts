@@ -67,8 +67,7 @@ export function mesaTanda(fase: Fase, orden: number): { mesa: number; tanda: num
 
 /** Los 32 clasificados en orden de semilla (1–13 primeros, 14–26 segundos y
     después los mejores terceros hasta 32), a partir de los partidos de grupo
-    jugados. El 3º del grupo M (3 equipos) NO entra en la bolsa de terceros:
-    juega 2 partidos y los demás terceros juegan 3, no son comparables. */
+    jugados. Los 13 terceros compiten por las plazas (grupos iguales de 4). */
 export function construirSemillas(partidos: PartidoBase[]): Id[] {
   const deGrupo = partidos.filter((p) => p.fase === 'grupo');
   const gids = [...new Set(deGrupo.map((p) => p.grupo_id).filter((g): g is number => g != null))]
@@ -84,7 +83,7 @@ export function construirSemillas(partidos: PartidoBase[]): Id[] {
     const tabla = clasificar(equipoIds, gPart);
     primeros.push(tabla[0]);
     segundos.push(tabla[1]);
-    if (tabla.length >= 4) terceros.push(tabla[2]); // solo grupos de 4
+    if (tabla[2]) terceros.push(tabla[2]);
   }
   primeros.sort(compararStandings);
   segundos.sort(compararStandings);
@@ -140,9 +139,22 @@ export function filasSiguienteRonda(nueva: FaseElim, prev: PartidoBase[]): FilaE
 }
 
 /** Los cruces de un grupo por posición, según su número de equipos; el índice
-    del par es el `orden`. 4 equipos → [1,2],[1,3],[1,4],[2,3],[2,4],[3,4];
-    3 equipos (grupo M) → [1,2],[1,3],[2,3]. */
+    del par es el `orden`. Para 4 equipos, en orden round-robin por rondas de
+    parejas disjuntas ([1,2],[3,4] · [1,3],[2,4] · [1,4],[2,3]): el grupo M
+    juega 2 cruces a la vez en 2 mesas (franjas 18:30/18:40/18:50) y ese orden
+    lo permite; en A–L (secuencial) da además mejores descansos. Otros tamaños
+    (por si acaso): todas las parejas i<j en orden. */
 export function paresDeGrupo(nEquipos: number): Array<[number, number]> {
+  if (nEquipos === 4) {
+    return [
+      [1, 2],
+      [3, 4],
+      [1, 3],
+      [2, 4],
+      [1, 4],
+      [2, 3],
+    ];
+  }
   const pares: Array<[number, number]> = [];
   for (let a = 1; a <= nEquipos; a++) {
     for (let b = a + 1; b <= nEquipos; b++) pares.push([a, b]);
@@ -150,7 +162,7 @@ export function paresDeGrupo(nEquipos: number): Array<[number, number]> {
   return pares;
 }
 
-/** Las filas de la fase de grupos (75: 6 por grupo de 4 y 3 del grupo M) a
+/** Las filas de la fase de grupos (78: 6 por cada uno de los 13 grupos) a
     partir de grupo → (posición → equipo). Nacen publicadas: la fase de grupos
     no tiene borrador. */
 export function filasPartidosGrupo(posicionesPorGrupo: Map<number, Map<number, Id>>) {
@@ -174,8 +186,8 @@ export function filasPartidosGrupo(posicionesPorGrupo: Map<number, Map<number, I
   return filas;
 }
 
-/** Estado y 1º que corresponden a un grupo según sus partidos (6 en los grupos
-    de 4, 3 en el grupo M: n·(n−1)/2 para n equipos). */
+/** Estado y 1º que corresponden a un grupo según sus partidos (6 con 4
+    equipos: n·(n−1)/2 para n equipos). */
 export function derivarGrupo(delGrupo: PartidoClasif[]): {
   estado: 'en_curso' | 'completo';
   ganadorId: Id | null;
@@ -192,9 +204,12 @@ export function derivarGrupo(delGrupo: PartidoClasif[]): {
   return { estado: 'completo', ganadorId: clasificar(equipoIds, delGrupo)[0]?.equipoId ?? null };
 }
 
-/** Mesa «física» de un partido de grupo: A–F y G–L reparten las mesas 1–6;
-    el grupo M (13) cae en la mesa 1, que a las 18:30 está libre. */
+/** Mesa «física» de un partido de grupo: A–F y G–L reparten las mesas 1–6.
+    El grupo M (13) juega a las 18:30 en DOS mesas (las 1 y 2, libres a esa
+    hora): sus cruces alternan mesa por orden (0→1, 1→2, 2→1…). */
 export const mesaDeGrupo = (grupoId: number) => ((grupoId - 1) % 6) + 1;
+export const mesaDePartidoGrupo = (grupoId: number, orden: number) =>
+  grupoId === 13 ? (orden % 2) + 1 : mesaDeGrupo(grupoId);
 
 /** Redondea al siguiente cuarto de hora (para el valor inicial del selector). */
 export function siguienteCuarto(desde: Date): Date {

@@ -267,7 +267,7 @@ export default function Grupos() {
     setGuardando(null);
     setEditando(null);
 
-    // ¿El grupo queda completo? (todos sus partidos jugados: 6, o 3 en el M)
+    // ¿El grupo queda completo? (sus 6 partidos jugados)
     const delGrupo = nuevosPartidos.filter((x) => x.grupo_id === p.grupo_id);
     const { estado, ganadorId } = derivarGrupo(delGrupo);
     if (estado === 'completo') {
@@ -369,7 +369,7 @@ export default function Grupos() {
                     n === 1
                       ? 'Iniciar el Turno 1 abre los grupos A–F y CIERRA la porra de grupos para el público (irreversible). ¿Seguir?'
                       : n === 0
-                        ? 'Abrir el grupo M: sus 3 partidos se juegan en una mesa a las 18:30, antes del turno 1. ¿Seguir?'
+                        ? 'Abrir el grupo M: sus 6 partidos se juegan en dos mesas a las 18:30, antes del turno 1. ¿Seguir?'
                         : `Iniciar el Turno ${n} abre los grupos ${label.replace('Grupos ', '')}. ¿Seguir?`
                   }
                   confirmLabel={n === 1 ? 'Sí, iniciar y cerrar porra' : 'Sí, iniciar'}
@@ -412,7 +412,7 @@ export default function Grupos() {
             Grupo {grupoActivo.letra} ·{' '}
             <b>
               {partidosActivo.filter((p) => p.estado === 'jugado').length}/
-              {partidosActivo.length || (grupoActivo.turno === 0 ? 3 : 6)} partidos
+              {partidosActivo.length || 6} partidos
             </b>
           </p>
 
