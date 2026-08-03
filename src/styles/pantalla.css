@@ -394,12 +394,12 @@ body {
   color: var(--cup);
   animation: bk 1s infinite;
 }
-/* formatos largos («09:08:33», «3d 09h 08m»): menos cuerpo, que no desborde */
+/* formatos largos («09:08:33», «3d 09h 08m 33s»): menos cuerpo, que no desborde */
 .cd .clock.medio {
   font-size: 15vh;
 }
 .cd .clock.largo {
-  font-size: 11vh;
+  font-size: 9vh;
 }
 .cd .u {
   font-family: var(--mo);

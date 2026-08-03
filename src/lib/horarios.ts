@@ -36,8 +36,7 @@ export interface FaseConHora {
 }
 
 /** Cuenta atrás adaptativa según lo que falte:
-    ≥24 h → `3d 09h 08m` (sin segundos, no aportan nada) ·
-    1–24 h → `09:08:33` · <1 h → `08:33` ·
+    ≥24 h → `3d 09h 08m 33s` · 1–24 h → `09:08:33` · <1 h → `08:33` ·
     <1 min → solo los segundos (`42s`), para verlos en grande. */
 export function formatearRestante(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -45,7 +44,7 @@ export function formatearRestante(ms: number): string {
   if (s < 60) return `${s}s`;
   if (s < 3600) return `${p2(Math.floor(s / 60))}:${p2(s % 60)}`;
   if (s < 86400) return `${p2(Math.floor(s / 3600))}:${p2(Math.floor(s / 60) % 60)}:${p2(s % 60)}`;
-  return `${Math.floor(s / 86400)}d ${p2(Math.floor(s / 3600) % 24)}h ${p2(Math.floor(s / 60) % 60)}m`;
+  return `${Math.floor(s / 86400)}d ${p2(Math.floor(s / 3600) % 24)}h ${p2(Math.floor(s / 60) % 60)}m ${p2(s % 60)}s`;
 }
 
 export const horaCortaDeIso = (iso: string): string => {
