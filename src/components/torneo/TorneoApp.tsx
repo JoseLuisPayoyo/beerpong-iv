@@ -22,6 +22,9 @@ export default function TorneoApp() {
   const [equipos, setEquipos] = useState<EquipoPub[]>([]);
   const [fases, setFases] = useState<FaseRow[]>([]);
   const [ranking, setRanking] = useState<RankingRow[]>([]);
+  // Contador de apuestas (vista pública porra_stats): prueba social. null =
+  // sin dato (o la vista no existe): no se pinta nada.
+  const [apuestas, setApuestas] = useState<number | null>(null);
   // La porra es el gancho: es la pestaña de entrada, salvo que la URL traiga
   // ?tab= (los enlaces de la landing entran directos a su pestaña).
   const [tab, setTab] = useState<Tab>(() => {
@@ -96,6 +99,15 @@ export default function TorneoApp() {
     setEstado('listo');
   }, []);
 
+  // Contador de apuestas: vista pública `porra_stats` (solo agregados; las
+  // tablas privadas no se leen). Silencioso: si falla, se queda el último dato.
+  const cargarStats = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('porra_stats').select('apuestas').limit(1);
+    if (error || !data || data.length === 0) return;
+    setApuestas(Number((data[0] as { apuestas: number | string }).apuestas));
+  }, []);
+
   // Ranking: vista pública `ranking_porra` (solo mote+puntos), publishable key.
   // Se ordena en el cliente: puntos desc → creado_en asc (empate: antes gana).
   // Silencioso: si falla, el ranking se queda como esté; no bloquea el torneo.
@@ -114,7 +126,8 @@ export default function TorneoApp() {
   useEffect(() => {
     void cargar();
     void cargarRanking();
-  }, [cargar, cargarRanking]);
+    void cargarStats();
+  }, [cargar, cargarRanking, cargarStats]);
 
   // Realtime: cualquier cambio del admin se refleja solo. Se recarga con un
   // pequeño debounce para agrupar ráfagas (p. ej. generar 16 partidos de golpe).
@@ -129,6 +142,7 @@ export default function TorneoApp() {
       t = setTimeout(() => {
         void cargar();
         void cargarRanking();
+        void cargarStats();
       }, 250);
     };
     const canal = sb
@@ -141,7 +155,34 @@ export default function TorneoApp() {
       clearTimeout(t);
       void sb.removeChannel(canal);
     };
-  }, [cargar, cargarRanking]);
+  }, [cargar, cargarRanking, cargarStats]);
+
+  // Las vistas no emiten Realtime por sí solas: el contador de apuestas se
+  // refresca cada 30s, SOLO mientras la pestaña esté visible (document.hidden
+  // lo para), igual que el poll del ranking. Timer limpiado al desmontar.
+  useEffect(() => {
+    let id: ReturnType<typeof setInterval> | undefined;
+    const parar = () => {
+      if (id) {
+        clearInterval(id);
+        id = undefined;
+      }
+    };
+    const sincronizar = () => {
+      if (document.hidden) {
+        parar();
+      } else if (!id) {
+        void cargarStats(); // refresca al volver a ser visible
+        id = setInterval(() => void cargarStats(), 30000);
+      }
+    };
+    sincronizar();
+    document.addEventListener('visibilitychange', sincronizar);
+    return () => {
+      parar();
+      document.removeEventListener('visibilitychange', sincronizar);
+    };
+  }, [cargarStats]);
 
   // Poll cada 30s SOLO mientras la pestaña Ranking está visible: para que
   // aparezcan los que se apunten nuevos (altas que no disparan Realtime). Se
@@ -205,8 +246,16 @@ export default function TorneoApp() {
         <div className="evinfo">
           6 AGO · POLIDEPORTIVO · CABRA DEL SANTO CRISTO · APERTURA {HORARIOS.apertura}
         </div>
-        {faseCuenta && faseCuenta.hora_inicio && (
-          <LineaCuenta horaInicio={faseCuenta.hora_inicio} desfase={desfase} />
+        {faseCuenta && faseCuenta.hora_inicio ? (
+          <LineaCuenta horaInicio={faseCuenta.hora_inicio} desfase={desfase} apuestas={apuestas} />
+        ) : (
+          apuestas != null &&
+          apuestas > 0 && (
+            <div className="hd-ap">
+              <span className="dot" />
+              {apuestas} {apuestas === 1 ? 'APUESTA' : 'APUESTAS'}
+            </div>
+          )
         )}
         {sesion && (
           <div className="prog">
@@ -244,6 +293,7 @@ export default function TorneoApp() {
                 equipos={equipos}
                 fases={fases}
                 desfase={desfase}
+                apuestas={apuestas}
                 sesion={sesion}
                 onSesion={setSesion}
               />
@@ -328,15 +378,36 @@ function AvisosTorneo() {
   );
 }
 
-// Línea de cuenta atrás de la cabecera. Informativa: al llegar a cero se
-// esconde sola; nada se cierra automáticamente.
-function LineaCuenta({ horaInicio, desfase }: { horaInicio: string; desfase: number }) {
+// Línea de cuenta atrás de la cabecera, con el contador de apuestas unido
+// (dos líneas ya hay; nada de apelotonar una tercera). Informativa: al llegar
+// a cero se esconde sola y queda solo el contador; nada se cierra.
+function LineaCuenta({
+  horaInicio,
+  desfase,
+  apuestas,
+}: {
+  horaInicio: string;
+  desfase: number;
+  apuestas: number | null;
+}) {
   const restante = useRestante(horaInicio, desfase);
-  if (!restante) return null;
+  const contador =
+    apuestas != null && apuestas > 0
+      ? `${apuestas} ${apuestas === 1 ? 'APUESTA' : 'APUESTAS'}`
+      : null;
+  if (!restante) {
+    return contador ? (
+      <div className="hd-ap">
+        <span className="dot" />
+        {contador}
+      </div>
+    ) : null;
+  }
   return (
     <div className="hd-cd">
       <span className="dot" />
       LA PORRA CIERRA EN {restante} · EMPEZAMOS A LAS {horaCorta(horaInicio)}
+      {contador && <span className="ap"> · {contador}</span>}
     </div>
   );
 }

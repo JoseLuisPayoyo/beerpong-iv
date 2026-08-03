@@ -86,6 +86,15 @@ create table if not exists public.participantes (
 create unique index if not exists participantes_mote_unico
   on public.participantes (lower(trim(mote)));
 
+-- porra_stats: contadores públicos de la porra (prueba social). Solo números
+-- agregados, nunca apuestas individuales. Como toda vista sin security_invoker,
+-- corre con los permisos del dueño y puede contar por encima del RLS de las
+-- tablas privadas. Lectura pública con la publishable key.
+create or replace view public.porra_stats as
+select
+  (select count(*) from public.apuestas)      as apuestas,
+  (select count(*) from public.participantes) as participantes;
+
 create table if not exists public.apuestas (
   id              uuid primary key default gen_random_uuid(),
   participante_id uuid not null references public.participantes(id),

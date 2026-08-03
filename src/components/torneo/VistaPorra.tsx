@@ -50,6 +50,7 @@ export default function VistaPorra({
   equipos,
   fases,
   desfase,
+  apuestas,
   sesion,
   onSesion,
 }: {
@@ -58,6 +59,7 @@ export default function VistaPorra({
   equipos: EquipoPub[];
   fases: FaseRow[];
   desfase: number; // reloj servidor − reloj móvil (ms), para la cuenta atrás
+  apuestas: number | null; // contador público (porra_stats); null/0 = no se pinta
   sesion: Sesion | null;
   onSesion: (s: Sesion | null) => void;
 }) {
@@ -287,6 +289,16 @@ export default function VistaPorra({
     </div>
   );
 
+  // Prueba social: cuántas apuestas lleva la porra. Con 0 no se enseña nada
+  // (queda pobre); sin sesión, remate para picar.
+  const barraApuestas =
+    apuestas != null && apuestas > 0 ? (
+      <div className="apbar">
+        <b>{apuestas}</b> {apuestas === 1 ? 'APUESTA YA HECHA' : 'APUESTAS YA HECHAS'}
+        {!sesion && <span className="pica"> · ¿TE VAS A QUEDAR FUERA?</span>}
+      </div>
+    ) : null;
+
   // Sin sesión: pantalla de alta/entrar antes de poder apostar.
   if (!sesion) {
     return (
@@ -298,6 +310,7 @@ export default function VistaPorra({
           <span className="dot" />
           ADIVINA GANADORES · GANA EL PROFETA
         </div>
+        {barraApuestas}
         <FormIdentidad enviando={enviando} setEnviando={setEnviando} setMsg={setMsg} onSesion={onSesion} aviso={aviso} />
       </section>
     );
@@ -314,6 +327,7 @@ export default function VistaPorra({
         </span>
         <button onClick={salir}>SALIR</button>
       </div>
+      {barraApuestas}
 
       <div className="chips">
         {CHIPS.map((c) => {
