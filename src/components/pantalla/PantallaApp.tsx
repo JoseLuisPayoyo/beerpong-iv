@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { clasificar, compararStandings, type Id, type Standing } from '../../lib/clasificacion';
-import { horaDeFase, horaDeTurno } from '../../lib/horarios';
+import { formatearRestante, horaDeFase, horaDeTurno } from '../../lib/horarios';
 
 // Pantalla de proyector (/pantalla). Se abre, se pone a pantalla completa y no
 // se toca en toda la noche: la vista se deriva del estado del torneo en la BD.
@@ -585,8 +585,11 @@ function CuentaAtras({
 }) {
   const ms = Math.max(0, new Date(fase.hora_inicio!).getTime() - ahora);
   const s = Math.floor(ms / 1000);
-  const reloj = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-  const clase = s <= 60 ? 'clock hot' : s <= 120 ? 'clock warn' : 'clock';
+  // Formato adaptativo (días → horas → minutos → solo segundos, en grande).
+  // Los formatos largos bajan de cuerpo para no desbordar el layout.
+  const reloj = formatearRestante(ms);
+  const tam = reloj.length > 8 ? ' largo' : reloj.length > 5 ? ' medio' : '';
+  const clase = (s <= 60 ? 'clock hot' : s <= 120 ? 'clock warn' : 'clock') + tam;
 
   // Los primeros cruces de esa fase (la porra 'grupos' no tiene cruces que enseñar).
   const fasePartidos = fase.nombre === 'grupos' ? 'grupo' : fase.nombre;

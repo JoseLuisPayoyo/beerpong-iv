@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { formatearRestante } from '../../lib/horarios';
 import type { FaseRow } from './tipos';
 
 // Cuenta atrás de la porra: informativa (al llegar a cero NO se cierra nada;
@@ -53,8 +54,9 @@ export const horaCorta = (iso: string) => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-/** «MM:SS» hasta hora_inicio, contando en local sobre el desfase calculado.
-    Devuelve null cuando llega a cero: quien la usa deja de pintarla. */
+/** Lo que falta hasta hora_inicio en formato adaptativo (formatearRestante),
+    contando en local sobre el desfase calculado. Devuelve null cuando llega a
+    cero: quien la usa deja de pintarla. */
 export function useRestante(horaInicio: string, desfase: number): string | null {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -63,7 +65,5 @@ export function useRestante(horaInicio: string, desfase: number): string | null 
   }, []);
   const ms = new Date(horaInicio).getTime() - (Date.now() + desfase);
   if (ms <= 0) return null;
-  const mm = Math.floor(ms / 60000);
-  const ss = Math.floor((ms % 60000) / 1000);
-  return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  return formatearRestante(ms);
 }
