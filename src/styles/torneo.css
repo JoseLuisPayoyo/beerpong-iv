@@ -651,6 +651,28 @@ body::before {
   color: var(--cr);
   font-weight: 600;
 }
+/* total de participantes, encima de la lista */
+.rtotal {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--mu);
+  margin-bottom: 8px;
+}
+/* desplegar el ranking cuando pasa del corte */
+.vertodos {
+  width: 100%;
+  padding: 12px;
+  margin-top: 4px;
+  background: var(--bg2);
+  border: 1px solid var(--ln);
+  border-radius: 12px;
+  color: var(--cr);
+  font-family: var(--mo);
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
 .rk {
   display: flex;
   align-items: center;

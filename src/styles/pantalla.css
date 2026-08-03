@@ -530,6 +530,16 @@ body {
   height: 100%;
   align-content: center;
 }
+/* total de participantes, a lo ancho bajo el top 10 */
+.prof .ptot {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-family: var(--mo);
+  font-size: 1.9vh;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  margin-top: 0.6vh;
+}
 .rk {
   display: flex;
   align-items: center;

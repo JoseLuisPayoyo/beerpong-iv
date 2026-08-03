@@ -705,6 +705,12 @@ function Profeta({ ranking }: { ranking: RankingRow[] }) {
           <span className="rs">{r.puntos}</span>
         </div>
       ))}
+      {/* en el proyector solo cabe el top 10; el total dice cuántos juegan */}
+      <div className="ptot">
+        {ranking.length > top.length
+          ? `${top.length} DE ${ranking.length} PARTICIPANTES`
+          : `${ranking.length} ${ranking.length === 1 ? 'PARTICIPANTE' : 'PARTICIPANTES'}`}
+      </div>
     </div>
   );
 }
