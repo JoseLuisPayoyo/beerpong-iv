@@ -34,6 +34,7 @@ export interface PartidoBase {
   vasos_b: number | null;
   ganador_id: Id | null;
   estado: string;
+  publicado?: boolean; // false = borrador (el ⇄ de ConfirmarCruces solo sale ahí)
 }
 
 /** Fila nueva de un cruce de eliminatoria (siempre nace en borrador). */

@@ -33,7 +33,8 @@ export default function ConfirmarCruces({
   onCambiado: () => Promise<void> | void; // recargar datos del padre
   onOk: (texto: string) => void; // aviso de éxito del padre
 }) {
-  const [sel, setSel] = useState<Id | null>(null); // primer cruce del intercambio
+  // Primer equipo del intercambio: el cruce y su lado (a o b).
+  const [sel, setSel] = useState<{ id: Id; lado: 'a' | 'b' } | null>(null);
   const [hora, setHora] = useState<Date>(() => siguienteCuarto(new Date()));
   const [ocupado, setOcupado] = useState(false);
   const [errOp, setErrOp] = useState<ErrorOp | null>(null);
@@ -44,16 +45,59 @@ export default function ConfirmarCruces({
     setHora((h) => new Date(h.getTime() + min * 60000));
   }
 
-  // Intercambia las parejas de dos cruces (permuta simple: mismos equipos,
-  // solo cambian de cruce). Idempotente: el reintento repite ambas escrituras
-  // con los valores capturados, así que un fallo a medias se repara solo.
-  async function intercambiar(p1: PartidoBase, p2: PartidoBase) {
+  const equipoDe = (p: PartidoBase, lado: 'a' | 'b') =>
+    lado === 'a' ? p.equipo_a : p.equipo_b;
+
+  // Permuta UN equipo de un cruce con UN equipo de otro cruce (cambia los
+  // emparejamientos; p. ej. separar a dos amigos que cayeron en la misma semi).
+  // Los valores nuevos se capturan antes de escribir, así que el reintento
+  // repite ambas escrituras tal cual: un fallo a medias se repara solo, sin
+  // duplicar ni perder equipos.
+  async function intercambiar(
+    p1: PartidoBase,
+    lado1: 'a' | 'b',
+    p2: PartidoBase,
+    lado2: 'a' | 'b',
+  ) {
+    const eq1 = equipoDe(p1, lado1);
+    const eq2 = equipoDe(p2, lado2);
+    if (eq1 == null || eq2 == null) return;
+
+    // Antes de escribir: simular la permuta y comprobar que el cuadro sigue
+    // siendo válido (mismos equipos, ninguno repetido ni ausente). Si el
+    // estado local estuviera desfasado, mejor resincronizar que corromper.
+    const despues = cruces.flatMap((c) => {
+      let a = c.equipo_a;
+      let b = c.equipo_b;
+      if (c.id === p1.id) {
+        if (lado1 === 'a') a = eq2;
+        else b = eq2;
+      }
+      if (c.id === p2.id) {
+        if (lado2 === 'a') a = eq1;
+        else b = eq1;
+      }
+      return [a, b];
+    });
+    const antes = cruces.flatMap((c) => [c.equipo_a, c.equipo_b]);
+    const clave = (xs: (Id | null)[]) =>
+      xs.filter((x) => x != null).map(String).sort().join('|');
+    const noNulos = despues.filter((x) => x != null).map(String);
+    if (clave(antes) !== clave(despues) || new Set(noNulos).size !== noNulos.length) {
+      setSel(null);
+      setErrOp({
+        texto: 'El intercambio dejaría el cuadro con equipos repetidos o perdidos; no se ha tocado nada. Recarga y vuelve a intentarlo.',
+        reintentar: () => void onCambiado(),
+      });
+      return;
+    }
+
     setErrOp(null);
     setOcupado(true);
     const r1 = vigilar(
       await sb
         .from('partidos')
-        .update({ equipo_a: p2.equipo_a, equipo_b: p2.equipo_b })
+        .update(lado1 === 'a' ? { equipo_a: eq2 } : { equipo_b: eq2 })
         .eq('id', p1.id),
     );
     const r2 = r1.error
@@ -61,7 +105,7 @@ export default function ConfirmarCruces({
       : vigilar(
           await sb
             .from('partidos')
-            .update({ equipo_a: p1.equipo_a, equipo_b: p1.equipo_b })
+            .update(lado2 === 'a' ? { equipo_a: eq1 } : { equipo_b: eq1 })
             .eq('id', p2.id),
         );
     setOcupado(false);
@@ -69,7 +113,7 @@ export default function ConfirmarCruces({
     if (error) {
       setErrOp({
         texto: `No se pudo completar el intercambio; reintenta para dejarlo bien. (${error.message})`,
-        reintentar: () => void intercambiar(p1, p2),
+        reintentar: () => void intercambiar(p1, lado1, p2, lado2),
       });
       return;
     }
@@ -77,18 +121,28 @@ export default function ConfirmarCruces({
     await onCambiado();
   }
 
-  function tocarIntercambio(p: PartidoBase) {
-    if (ocupado) return;
+  function tocarIntercambio(p: PartidoBase, lado: 'a' | 'b') {
+    if (ocupado || equipoDe(p, lado) == null) return;
     if (sel == null) {
-      setSel(p.id);
+      setSel({ id: p.id, lado });
       return;
     }
-    if (sel === p.id) {
-      setSel(null); // des-seleccionar
+    if (sel.id === p.id) {
+      // Mismo equipo: soltar. Otro equipo del MISMO cruce: mover la selección
+      // ahí (intercambiarlos entre sí no cambiaría nada).
+      setSel(sel.lado === lado ? null : { id: p.id, lado });
       return;
     }
-    const p1 = cruces.find((x) => x.id === sel);
-    if (p1) void intercambiar(p1, p);
+    const p1 = cruces.find((x) => x.id === sel.id);
+    if (p1) void intercambiar(p1, sel.lado, p, lado);
+    else setSel(null); // el cruce marcado ya no existe: resincronizado por el padre
+  }
+
+  // Nombre del equipo marcado, para el aviso de «elige con quién intercambiarlo».
+  function nombreSel(): string {
+    if (sel == null) return '';
+    const p = cruces.find((x) => x.id === sel.id);
+    return p ? nombre(equipoDe(p, sel.lado)) : '';
   }
 
   // Publica el cuadro y abre la porra con su hora. Dos escrituras en orden
@@ -124,28 +178,42 @@ export default function ConfirmarCruces({
     await onCambiado();
   }
 
-  const fila = (p: PartidoBase, i: number) => {
-    const sa = p.equipo_a != null ? semillas?.get(p.equipo_a) : null;
-    const sbm = p.equipo_b != null ? semillas?.get(p.equipo_b) : null;
+  // Cada equipo lleva su propio ⇄: el intercambio es de equipos entre cruces,
+  // no de cruces enteros. Solo mientras el cruce siga en borrador.
+  const lado = (p: PartidoBase, l: 'a' | 'b') => {
+    const equipo = equipoDe(p, l);
+    const semilla = equipo != null ? semillas?.get(equipo) : null;
+    const marcado = sel != null && sel.id === p.id && sel.lado === l;
     return (
-      <div className={`pc-cross${sel === p.id ? ' sel' : ''}`} key={String(p.id)}>
-        <span className="n">{i + 1}</span>
-        <span className="t">
-          <b>{nombre(p.equipo_a)}</b> {sa != null && <span className="seed">({sa})</span>}
-          <span className="vs">vs</span>
-          <b>{nombre(p.equipo_b)}</b> {sbm != null && <span className="seed">({sbm})</span>}
+      <div className={`pc-lado${marcado ? ' sel' : ''}`}>
+        <span className="tn">
+          <b>{nombre(equipo)}</b> {semilla != null && <span className="seed">({semilla})</span>}
         </span>
-        <button
-          className="sw"
-          disabled={ocupado}
-          aria-label={sel === p.id ? 'Quitar selección' : 'Intercambiar este cruce'}
-          onClick={() => tocarIntercambio(p)}
-        >
-          ⇄
-        </button>
+        {p.publicado !== true && (
+          <button
+            className="sw"
+            disabled={ocupado || equipo == null}
+            aria-label={
+              marcado ? `Soltar a ${nombre(equipo)}` : `Intercambiar a ${nombre(equipo)} de cruce`
+            }
+            onClick={() => tocarIntercambio(p, l)}
+          >
+            ⇄
+          </button>
+        )}
       </div>
     );
   };
+
+  const fila = (p: PartidoBase, i: number) => (
+    <div className={`pc-cross${sel != null && sel.id === p.id ? ' sel' : ''}`} key={String(p.id)}>
+      <span className="n">{i + 1}</span>
+      <div className="tcol">
+        {lado(p, 'a')}
+        {lado(p, 'b')}
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -153,8 +221,9 @@ export default function ConfirmarCruces({
         <div className="l">Borrador · el público no lo ve</div>
         <div className="h">Revisa y cambia lo que quieras</div>
         <div className="p">
-          Toca ⇄ en dos cruces para intercambiar sus parejas. Cuando confirmes, el cuadro se hace
-          público y se abre la porra.
+          Toca ⇄ en un equipo y luego en un equipo de otro cruce para permutarlos (p. ej. separar
+          a dos que hayan caído juntos). Cuando confirmes, el cuadro se hace público y se abre la
+          porra.
         </div>
       </div>
 
@@ -164,7 +233,10 @@ export default function ConfirmarCruces({
       </div>
       {cruces.map(fila)}
       {sel != null && (
-        <p className="pc-hint">Cruce marcado. Toca ⇄ en otro para intercambiarlos, o en el mismo para soltarlo.</p>
+        <p className="pc-hint">
+          <b>{nombreSel()}</b> marcado. Elige con quién intercambiarlo: toca ⇄ en un equipo de
+          otro cruce, o en el mismo para soltarlo.
+        </p>
       )}
 
       <div className="pc-act">

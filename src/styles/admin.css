@@ -1093,37 +1093,49 @@ button.pc-pill:disabled {
   width: 16px;
   flex: none;
 }
-.pc-cross .t {
+/* columna con los dos equipos del cruce; cada uno con su propio ⇄ */
+.pc-cross .tcol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pc-lado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pc-lado .tn {
   flex: 1;
   min-width: 0;
   font-size: 12.5px;
   line-height: 1.4;
 }
-.pc-cross .t b {
+.pc-lado .tn b {
   font-weight: 600;
 }
-.pc-cross .t .vs {
-  color: var(--tx3);
-  font-size: 10px;
-  margin: 0 4px;
-}
-.pc-cross .sw {
+.pc-lado .sw {
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 9px;
   border: 1px solid var(--bd2);
   background: #fff;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--tx2);
 }
-.pc-cross.sel .sw {
+/* el equipo marcado para el intercambio */
+.pc-lado.sel .tn b {
+  color: var(--orD);
+}
+.pc-lado.sel .sw {
   border-color: var(--or);
   color: var(--orD);
   background: #fff3eb;
 }
-.pc-cross .sw:disabled {
+.pc-lado .sw:disabled {
   opacity: 0.5;
   cursor: default;
 }
