@@ -1,0 +1,30 @@
+---
+// Lista de participantes para el control de entrada. Sin login, solo lectura
+// (vista pública equipos_publicos, sin teléfonos). No usa Base.astro: nada de
+// GSAP ni estilos de la landing — bundle mínimo. noindex: es una herramienta
+// de puerta, no una página para Google.
+import '@fontsource/space-grotesk/400.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/600.css';
+import '@fontsource/space-grotesk/700.css';
+import '@fontsource/space-mono/400.css';
+import '../styles/lista.css';
+import ListaApp from '../components/lista/ListaApp';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#170e11" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <title>Beerpong IV · Lista de participantes</title>
+  </head>
+  <body>
+    <ListaApp client:only="react" />
+  </body>
+</html>
