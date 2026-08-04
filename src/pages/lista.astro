@@ -1,13 +1,15 @@
 ---
-// Lista de participantes para el control de entrada. Sin login, solo lectura
-// (vista pública equipos_publicos, sin teléfonos). No usa Base.astro: nada de
-// GSAP ni estilos de la landing — bundle mínimo. noindex: es una herramienta
-// de puerta, no una página para Google.
+// Control de entrada del día del torneo. Acceso con el mismo login de
+// Supabase Auth que /admin, pero sin nada del panel: solo buscar al equipo y
+// marcar que ha entrado. Lee la vista equipos_publicos (sin teléfonos). No usa
+// Base.astro: nada de GSAP ni estilos de la landing — bundle mínimo. noindex:
+// es una herramienta de puerta, no una página para Google.
 import '@fontsource/space-grotesk/400.css';
 import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';
 import '@fontsource/space-grotesk/700.css';
 import '@fontsource/space-mono/400.css';
+import '@fontsource/space-mono/700.css';
 import '../styles/lista.css';
 import ListaApp from '../components/lista/ListaApp';
 ---
@@ -22,7 +24,7 @@ import ListaApp from '../components/lista/ListaApp';
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
-    <title>Beerpong IV · Lista de participantes</title>
+    <title>Beerpong IV · Control de entrada</title>
   </head>
   <body>
     <ListaApp client:only="react" />

@@ -16,8 +16,16 @@ create table if not exists public.equipos (
                    check (estado in ('confirmado', 'espera', 'pagado', 'rechazado')),
   grupo_id       integer references public.grupos(id),
   pos_grupo      integer check (pos_grupo between 1 and 4),
+  entrada_at     timestamptz,  -- control de puerta (/lista): null = no ha entrado
   created_at     timestamptz not null default now()
 );
+
+-- equipos_publicos: vista pública de equipos SIN teléfono (la tabla tiene RLS
+-- y el navegador nunca la lee directa). Gestionada en Supabase; expone
+--   id, nombre_equipo, participante_1, participante_2, grupo_id, pos_grupo,
+--   entrada_at
+-- La usan /torneo, /pantalla y /lista con la publishable key. /lista además
+-- escribe equipos.entrada_at con la sesión authenticated (policy equipos_admin).
 
 -- ---------------------------------------------------------------------------
 -- grupos: 13 grupos de 4 (A–L en 2 turnos + el grupo M, que juega a las

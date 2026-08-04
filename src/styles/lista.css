@@ -1,6 +1,6 @@
-/* Lista de participantes (/lista): control de entrada en la puerta.
-   Mismos tokens que /torneo (torneo.css). Mobile-first: se usa desde un móvil,
-   de pie y con prisa — buscador grande, filas compactas y legibles. */
+/* Control de entrada (/lista): se usa de pie, con prisa y con ruido.
+   Mismos tokens que /torneo (torneo.css). Mobile-first: buscador y botones
+   grandes, filas compactas pero legibles, sin scroll horizontal. */
 
 :root {
   --bg: #170e11;
@@ -36,13 +36,14 @@ body {
 .ls {
   max-width: 520px;
   margin: 0 auto;
-  padding: 18px 16px calc(24px + env(safe-area-inset-bottom));
+  /* hueco abajo para que la barra de error fija no tape la última fila */
+  padding: 18px 16px calc(84px + env(safe-area-inset-bottom));
 }
 
 /* cabecera */
 .ls-hd {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 14px;
@@ -55,12 +56,66 @@ body {
 .ls-hd .marca b {
   color: var(--or);
 }
+.ls-hd .lado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
 .ls-hd .que {
   font-family: var(--mo);
   font-size: 9px;
   letter-spacing: 1.5px;
   color: var(--mu);
-  text-align: right;
+}
+.ls-hd .salir {
+  font-family: var(--mo);
+  font-size: 10px;
+  color: var(--mu);
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* login (mismo signInWithPassword que /admin, estética de /lista) */
+.ls-login {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--ln);
+  border-radius: 14px;
+  padding: 18px 16px;
+  margin-top: 8vh;
+}
+.ls-login label {
+  font-family: var(--mo);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--mu);
+  margin-top: 8px;
+}
+.ls-login input {
+  font: 500 17px/1.2 var(--bd);
+  color: var(--cr);
+  background: var(--bg3);
+  border: 1px solid var(--ln);
+  border-radius: 10px;
+  padding: 13px 14px;
+  outline: none;
+}
+.ls-login input:focus {
+  border-color: rgba(236, 58, 44, 0.6);
+}
+.ls-loginerr {
+  color: var(--or);
+  font-size: 13px;
+  margin-top: 8px;
+}
+.ls-btn.entrar {
+  margin-top: 14px;
 }
 
 /* buscador: grande, pegado arriba al hacer scroll (siempre a mano) */
@@ -106,27 +161,52 @@ body {
   cursor: pointer;
 }
 
-/* contador */
+/* contador: dentro / total, y resultados con búsqueda activa */
 .ls-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   font-family: var(--mo);
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: var(--am);
+  color: var(--mu2);
   padding: 6px 2px 8px;
 }
+.ls-total b {
+  color: var(--li);
+  font-size: 14px;
+}
+.ls-total .res {
+  color: var(--am);
+}
 
-/* lista: una fila por persona, compacta pero escaneable de pie */
+/* lista por equipos: fila = info + botón grande */
 .ls-lista {
   list-style: none;
 }
 .ls-lista li {
-  padding: 10px 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 2px;
   border-bottom: 1px solid var(--ln);
+}
+.ls-lista li.in {
+  background: linear-gradient(90deg, rgba(182, 217, 76, 0.08), transparent 80%);
+  border-left: 3px solid var(--li);
+  padding-left: 9px;
+  margin-left: -12px;
+  padding-right: 0;
+}
+.ls-lista .info {
+  flex: 1;
+  min-width: 0; /* deja truncar dentro del flex: sin scroll horizontal */
 }
 .ls-lista .nom {
   font-size: 17px;
   font-weight: 600;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 .ls-lista .sub {
   font-family: var(--mo);
@@ -135,8 +215,47 @@ body {
   margin-top: 2px;
   line-height: 1.4;
 }
+.ls-lista .hin {
+  font-family: var(--mo);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--li);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
 
-/* vacío / cargando / error */
+/* botón principal: grande, se pulsa con el pulgar y sin mirar */
+.ls-btn {
+  flex: none;
+  font: 700 13px var(--bd);
+  letter-spacing: 1px;
+  color: var(--cr);
+  background: var(--or);
+  border: 0;
+  border-radius: 12px;
+  min-height: 50px;
+  padding: 0 18px;
+  cursor: pointer;
+}
+.ls-btn:disabled {
+  opacity: 0.55;
+}
+.ls-undo {
+  flex: none;
+  font: 400 11px var(--mo);
+  color: var(--mu2);
+  background: none;
+  border: 1px solid var(--ln);
+  border-radius: 10px;
+  min-height: 40px;
+  padding: 0 14px;
+  cursor: pointer;
+}
+.ls-undo:disabled {
+  opacity: 0.55;
+}
+
+/* vacío / cargando / error de carga */
 .ls-vacio {
   text-align: center;
   padding: 48px 16px;
@@ -158,5 +277,35 @@ body {
   border: 0;
   border-radius: 10px;
   padding: 12px 26px;
+  cursor: pointer;
+}
+
+/* error de escritura persistente (no se descarta solo), con Reintentar */
+.ls-err {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  width: min(496px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #3a1512;
+  border: 1px solid rgba(236, 58, 44, 0.6);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  z-index: 5;
+}
+.ls-err button {
+  flex: none;
+  font: 600 13px var(--bd);
+  color: var(--cr);
+  background: var(--or);
+  border: 0;
+  border-radius: 10px;
+  min-height: 42px;
+  padding: 0 16px;
   cursor: pointer;
 }
