@@ -755,10 +755,12 @@ body {
   color: var(--muted);
   margin-top: 1.6vh;
 }
+/* cuatro cifras en una fila: gap algo menor que en la bienvenida para que
+   quepan sin apelotonarse también en un proyector 4:3 */
 .win .row {
   display: flex;
   justify-content: center;
-  gap: 4vw;
+  gap: 3vw;
   margin-top: 3.4vh;
 }
 .win .st .v {
@@ -772,6 +774,19 @@ body {
   letter-spacing: 0.2em;
   color: var(--muted);
   margin-top: 0.5vh;
+}
+/* el remate: los vasos de toda la noche. Legible desde el fondo, pero en mono
+   y apagado para no competir con el nombre del campeón */
+.win .tot {
+  font-family: var(--mo);
+  font-size: 2vh;
+  letter-spacing: 0.24em;
+  color: var(--muted);
+  margin-top: 3.2vh;
+}
+.win .tot b {
+  font-size: 2.8vh;
+  color: var(--lime);
 }
 
 /* punto discreto: más de un minuto sin datos frescos */

@@ -819,21 +819,28 @@ function Campeon({
   const equipo = datos.equipos.find((e) => e.id === id) ?? null;
   const nom = nombre(id) ?? '—';
 
-  // Cifras del campeón sobre sus partidos jugados (ganados, vasos, diferencia).
+  // Cifras del campeón sobre sus partidos jugados. Los cuatro números son
+  // coherentes entre sí: bebidos = lo que le metió el rival, y la diferencia
+  // es exactamente metidos − bebidos.
   const suyos = datos.partidos.filter(
     (p) => p.estado === 'jugado' && (p.equipo_a === id || p.equipo_b === id),
   );
   let ganados = 0;
   let metidos = 0;
-  let encajados = 0;
+  let bebidos = 0;
   for (const p of suyos) {
     if (p.ganador_id === id) ganados++;
     const propios = p.equipo_a === id ? (p.vasos_a ?? 0) : (p.vasos_b ?? 0);
     const rival = p.equipo_a === id ? (p.vasos_b ?? 0) : (p.vasos_a ?? 0);
     metidos += propios;
-    encajados += rival;
+    bebidos += rival;
   }
-  const dif = metidos - encajados;
+  const dif = metidos - bebidos;
+
+  // El remate: todos los vasos de la noche, de todas las fases (grupos incluidos).
+  const vasosNoche = datos.partidos
+    .filter((p) => p.estado === 'jugado')
+    .reduce((t, p) => t + (p.vasos_a ?? 0) + (p.vasos_b ?? 0), 0);
 
   const quien = [equipo?.participante_1, equipo?.participante_2].filter(Boolean).join(' · ');
 
@@ -855,11 +862,18 @@ function Campeon({
           <div className="k">VASOS METIDOS</div>
         </div>
         <div className="st">
+          <div className="v">{bebidos}</div>
+          <div className="k">VASOS BEBIDOS</div>
+        </div>
+        <div className="st">
           <div className="v" style={{ color: 'var(--lime)' }}>
             {dif > 0 ? `+${dif}` : dif}
           </div>
           <div className="k">DIFERENCIA</div>
         </div>
+      </div>
+      <div className="tot">
+        ESTA NOCHE SE HAN BEBIDO <b>{vasosNoche}</b> VASOS
       </div>
     </div>
   );
