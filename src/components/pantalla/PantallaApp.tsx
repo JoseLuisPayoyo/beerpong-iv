@@ -78,13 +78,6 @@ type Vista =
   | { v: 'clasificacion'; bloque: number }
   | { v: 'bienvenida' };
 
-const RONDAS: { fase: FaseNombre; label: string }[] = [
-  { fase: 'dieciseisavos', label: 'Dieciseisavos' },
-  { fase: 'octavos', label: 'Octavos' },
-  { fase: 'cuartos', label: 'Cuartos' },
-  { fase: 'semifinal', label: 'Semifinales' },
-  { fase: 'final', label: 'Final' },
-];
 const FASE_LEGIBLE: Record<string, string> = {
   grupos: 'Fase de grupos',
   dieciseisavos: 'Dieciseisavos',
@@ -247,14 +240,10 @@ export default function PantallaApp() {
     // 1) final jugada → campeón
     if (final && final.estado === 'jugado') return { v: 'campeon', final };
 
-    // 2) semi o final en juego → marcador gigante (la final manda)
-    const vivo =
-      (final?.estado === 'en_juego' ? final : null) ??
-      partidos
-        .filter((p) => p.fase === 'semifinal' && p.estado === 'en_juego')
-        .sort((a, b) => a.orden - b.orden)[0] ??
-      null;
-    if (vivo) return { v: 'marcador', p: vivo };
+    // 2) SOLO la final en juego → marcador gigante a pantalla completa.
+    //    Las semis ya no saltan aquí: se ven dentro del cuadro, con su
+    //    marcador subiendo en directo en su propio cruce.
+    if (final?.estado === 'en_juego') return { v: 'marcador', p: final };
 
     // 3) porra abierta con hora futura Y fase sin empezar → cuenta atrás.
     //    Si ya rueda un partido de la fase, fuera el reloj aunque no llegara a
@@ -274,7 +263,8 @@ export default function PantallaApp() {
     if (conCuenta) return { v: 'cuenta', fase: conCuenta };
 
     // 4) hay eliminatoria publicada → alterna cuadro / profeta cada 20 s
-    //    (sin ranking que enseñar, el cuadro se queda fijo)
+    //    (sin ranking que enseñar, el cuadro se queda fijo). El cuadro va
+    //    desde octavos; las semis en juego se actualizan ahí dentro.
     if (partidos.some((p) => p.fase !== 'grupo')) {
       const enProfeta = ranking.length > 0 && Math.floor(ahora / 20000) % 2 === 1;
       return enProfeta ? { v: 'profeta' } : { v: 'cuadro' };
@@ -360,9 +350,9 @@ export default function PantallaApp() {
           ),
         };
       case 'marcador':
+        // Aquí solo llega la final: las semis se ven dentro del cuadro.
         return {
-          phase:
-            vista.p.fase === 'final' ? 'Final' : `Semifinal ${vista.p.orden + 1}`,
+          phase: 'Final',
           bt: 'EN DIRECTO',
           bc: 'var(--magenta)',
           foot: (
@@ -666,55 +656,23 @@ function Cuadro({ datos, nombre }: { datos: Datos; nombre: (id: Id | null) => st
   const final = datos.partidos.find((p) => p.fase === 'final' && p.orden === 0) ?? null;
   const campeon = final && final.estado === 'jugado' ? nombre(final.ganador_id) : null;
 
-  // La primera columna es SIEMPRE la ronda en curso: la más temprana con
-  // algún partido pendiente o en juego (si todo lo generado está jugado, la
-  // última generada). Las rondas ya terminadas no se pintan: cuando ruedan
-  // los cuartos, los 16 cruces de dieciseisavos ya no le importan a nadie y
-  // solo quitaban sitio (el cuadro completo sigue en /torneo).
+  // El cuadro empieza SIEMPRE en octavos: los dieciseisavos no se pintan
+  // nunca aquí (16 cruces no caben legibles en un proyector; están en
+  // /torneo). Octavos va repartido en dos columnas de 4 para que el cuerpo
+  // aguante la lectura desde el fondo del pabellón. Una semi en juego se ve
+  // aquí dentro, con su marcador subiendo en directo en su cruce resaltado.
   const partidosDe = (fase: FaseNombre) =>
     datos.partidos.filter((p) => p.fase === fase).sort((a, b) => a.orden - b.orden);
-  const conPartidos = RONDAS.filter((r) => partidosDe(r.fase).length > 0);
-  const viva =
-    conPartidos.find((r) => partidosDe(r.fase).some((p) => p.estado !== 'jugado')) ??
-    conPartidos[conPartidos.length - 1];
-  if (!viva) return null; // la máquina de estados solo entra aquí con eliminatoria
-
-  // Dieciseisavos en curso: 16 cruces no caben en una columna de 1080p.
-  // Van SOLOS, a todo el ancho, en dos columnas de 8 con letra grande.
-  if (viva.fase === 'dieciseisavos') {
-    const cruces = partidosDe('dieciseisavos');
-    const mitad = Math.ceil(cruces.length / 2);
-    return (
-      <div className="brkbig">
-        <div className="bhbig">Dieciseisavos</div>
-        <div className="cols">
-          {[cruces.slice(0, mitad), cruces.slice(mitad)].map((col, i) => (
-            <div className="bcolbig" key={i}>
-              {col.map((m) => (
-                <MatchMini key={String(m.id)} p={m} nombre={nombre} />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // De la ronda en curso a la final. Octavos se reparte en dos columnas de 4
-  // (8 no caben en una); al haber menos columnas, el texto crece (.brk.nN).
-  const desde = RONDAS.slice(RONDAS.findIndex((r) => r.fase === viva.fase));
-  const cols: { key: string; label: string; fase: FaseNombre; matches: PartidoRow[] }[] = [];
-  for (const r of desde) {
-    const matches = partidosDe(r.fase);
-    if (r.fase === 'octavos') {
-      cols.push({ key: 'octavos-a', label: r.label, fase: r.fase, matches: matches.slice(0, 4) });
-      cols.push({ key: 'octavos-b', label: r.label, fase: r.fase, matches: matches.slice(4) });
-    } else {
-      cols.push({ key: r.fase, label: r.label, fase: r.fase, matches });
-    }
-  }
+  const octavos = partidosDe('octavos');
+  const cols: { key: string; label: string; fase: FaseNombre; matches: PartidoRow[] }[] = [
+    { key: 'octavos-a', label: 'Octavos', fase: 'octavos', matches: octavos.slice(0, 4) },
+    { key: 'octavos-b', label: 'Octavos', fase: 'octavos', matches: octavos.slice(4) },
+    { key: 'cuartos', label: 'Cuartos', fase: 'cuartos', matches: partidosDe('cuartos') },
+    { key: 'semifinal', label: 'Semifinales', fase: 'semifinal', matches: partidosDe('semifinal') },
+    { key: 'final', label: 'Final', fase: 'final', matches: partidosDe('final') },
+  ];
   return (
-    <div className={`brk n${cols.length}`} style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}>
+    <div className="brk">
       {cols.map((c) => (
         <div className="bcol" key={c.key}>
           <div className="bh">{c.label}</div>
@@ -740,8 +698,7 @@ function MatchMini({ p, nombre }: { p: PartidoRow; nombre: (id: Id | null) => st
   const linea = (equipoId: Id | null, vasos: number | null) => {
     const nom = nombre(equipoId);
     const gana = jugado && p.ganador_id != null && equipoId === p.ganador_id;
-    // `chico` solo tiene efecto en la vista grande de 16avos/octavos (.brkbig):
-    // los nombres largos bajan de cuerpo en vez de recortarse con «…».
+    // nombres largos: bajan de cuerpo (.bn.chico) en vez de recortarse con «…»
     const chico = (nom ?? '').length > 16;
     return (
       <div className={`bl${gana ? ' w' : ''}${nom == null ? ' pend' : ''}`}>
