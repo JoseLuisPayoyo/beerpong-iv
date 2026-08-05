@@ -666,30 +666,27 @@ function Cuadro({ datos, nombre }: { datos: Datos; nombre: (id: Id | null) => st
   const final = datos.partidos.find((p) => p.fase === 'final' && p.orden === 0) ?? null;
   const campeon = final && final.estado === 'jugado' ? nombre(final.ganador_id) : null;
 
-  // Caso especial: dieciseisavos (16 cruces) u octavos (8) como ronda más
-  // avanzada. En una sola columna no caben en 1080p (se cortaban bajo el
-  // pie) y salían ilegibles: la ronda en curso se pinta SOLA, a todo el
-  // ancho, en dos columnas (16 → 2×8, 8 → 2×4) y con letra grande; las
-  // rondas posteriores, aún vacías, no se pintan. De cuartos en adelante
-  // (4, 2 y 1 cruces) el cuadro completo de 5 columnas cabe y sigue igual.
-  const hayTardias = datos.partidos.some(
-    (p) => p.fase === 'cuartos' || p.fase === 'semifinal' || p.fase === 'final',
-  );
-  const rondaGrande = hayTardias
-    ? null
-    : datos.partidos.some((p) => p.fase === 'octavos')
-      ? ('octavos' as const)
-      : datos.partidos.some((p) => p.fase === 'dieciseisavos')
-        ? ('dieciseisavos' as const)
-        : null;
-  if (rondaGrande) {
-    const cruces = datos.partidos
-      .filter((p) => p.fase === rondaGrande)
-      .sort((a, b) => a.orden - b.orden);
+  // La primera columna es SIEMPRE la ronda en curso: la más temprana con
+  // algún partido pendiente o en juego (si todo lo generado está jugado, la
+  // última generada). Las rondas ya terminadas no se pintan: cuando ruedan
+  // los cuartos, los 16 cruces de dieciseisavos ya no le importan a nadie y
+  // solo quitaban sitio (el cuadro completo sigue en /torneo).
+  const partidosDe = (fase: FaseNombre) =>
+    datos.partidos.filter((p) => p.fase === fase).sort((a, b) => a.orden - b.orden);
+  const conPartidos = RONDAS.filter((r) => partidosDe(r.fase).length > 0);
+  const viva =
+    conPartidos.find((r) => partidosDe(r.fase).some((p) => p.estado !== 'jugado')) ??
+    conPartidos[conPartidos.length - 1];
+  if (!viva) return null; // la máquina de estados solo entra aquí con eliminatoria
+
+  // Dieciseisavos en curso: 16 cruces no caben en una columna de 1080p.
+  // Van SOLOS, a todo el ancho, en dos columnas de 8 con letra grande.
+  if (viva.fase === 'dieciseisavos') {
+    const cruces = partidosDe('dieciseisavos');
     const mitad = Math.ceil(cruces.length / 2);
     return (
-      <div className={`brkbig${rondaGrande === 'octavos' ? ' o8' : ''}`}>
-        <div className="bhbig">{rondaGrande === 'octavos' ? 'Octavos' : 'Dieciseisavos'}</div>
+      <div className="brkbig">
+        <div className="bhbig">Dieciseisavos</div>
         <div className="cols">
           {[cruces.slice(0, mitad), cruces.slice(mitad)].map((col, i) => (
             <div className="bcolbig" key={i}>
@@ -703,29 +700,37 @@ function Cuadro({ datos, nombre }: { datos: Datos; nombre: (id: Id | null) => st
     );
   }
 
+  // De la ronda en curso a la final. Octavos se reparte en dos columnas de 4
+  // (8 no caben en una); al haber menos columnas, el texto crece (.brk.nN).
+  const desde = RONDAS.slice(RONDAS.findIndex((r) => r.fase === viva.fase));
+  const cols: { key: string; label: string; fase: FaseNombre; matches: PartidoRow[] }[] = [];
+  for (const r of desde) {
+    const matches = partidosDe(r.fase);
+    if (r.fase === 'octavos') {
+      cols.push({ key: 'octavos-a', label: r.label, fase: r.fase, matches: matches.slice(0, 4) });
+      cols.push({ key: 'octavos-b', label: r.label, fase: r.fase, matches: matches.slice(4) });
+    } else {
+      cols.push({ key: r.fase, label: r.label, fase: r.fase, matches });
+    }
+  }
   return (
-    <div className="brk">
-      {RONDAS.map((r) => {
-        const matches = datos.partidos
-          .filter((p) => p.fase === r.fase)
-          .sort((a, b) => a.orden - b.orden);
-        return (
-          <div className="bcol" key={r.fase}>
-            <div className="bh">{r.label}</div>
-            <div className="list">
-              {matches.map((m) => (
-                <MatchMini key={String(m.id)} p={m} nombre={nombre} />
-              ))}
-            </div>
-            {r.fase === 'final' && (
-              <div className="champbox">
-                <div className="cl">CAMPEÓN BEERPONG IV</div>
-                <div className="cv">{campeon ?? '¿ ? ? ?'}</div>
-              </div>
-            )}
+    <div className={`brk n${cols.length}`} style={{ gridTemplateColumns: `repeat(${cols.length}, 1fr)` }}>
+      {cols.map((c) => (
+        <div className="bcol" key={c.key}>
+          <div className="bh">{c.label}</div>
+          <div className="list">
+            {c.matches.map((m) => (
+              <MatchMini key={String(m.id)} p={m} nombre={nombre} />
+            ))}
           </div>
-        );
-      })}
+          {c.fase === 'final' && (
+            <div className="champbox">
+              <div className="cl">CAMPEÓN BEERPONG IV</div>
+              <div className="cv">{campeon ?? '¿ ? ? ?'}</div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

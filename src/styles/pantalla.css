@@ -510,11 +510,10 @@ body {
   color: var(--muted);
   line-height: 1.2;
 }
-/* dieciseisavos u octavos como ronda en curso: en una columna no caben en
-   1080p. La ronda va SOLA a todo el ancho, en dos columnas (16 → 2×8,
-   8 → 2×4), con letra grande (esto se lee a 20 metros); las rondas vacías
-   no se pintan. Presupuesto vertical: 8 tarjetas de ≤9vh (o 4 de ≤14vh en
-   octavos) + cabecera caben en el core (~80vh) sin scroll ni pisar el pie. */
+/* dieciseisavos en curso: 16 cruces no caben en una columna de 1080p. Van
+   solos, a todo el ancho, en dos columnas de 8 con letra grande (esto se
+   lee a 20 metros). Presupuesto vertical: 8 tarjetas de ≤9vh + cabecera
+   caben en el core (~80vh) sin scroll ni pisar el pie. */
 .brkbig {
   height: 100%;
   min-height: 0;
@@ -573,24 +572,84 @@ body {
   background: rgba(246, 167, 44, 0.1);
   box-shadow: 0 0 0 0.35vh rgba(246, 167, 44, 0.4);
 }
-/* octavos: 4 tarjetas por columna dejan el doble de alto → cuerpos mayores */
-.brkbig.o8 .bm {
-  padding: 1.4vh 2vh;
+/* de octavos en adelante, el cuadro empieza por la ronda en curso (las
+   terminadas no se pintan) y el ancho sobrante se gasta en letra: menos
+   columnas (.brk.nN, N columnas visibles) → cuerpos mayores. El resalte
+   ámbar del cruce en juego (.brk .bm.now) vale para todos los tamaños. */
+.brk .bm.now {
+  background: rgba(246, 167, 44, 0.1);
+  box-shadow: 0 0 0 0.35vh rgba(246, 167, 44, 0.4);
 }
-.brkbig.o8 .bm .bl {
+/* n5: octavos en dos columnas de 4 + cuartos + semis + final */
+.brk.n5 .bm .bl {
+  padding: 0.4vh 0;
+}
+.brk.n5 .bm .bn,
+.brk.n5 .bm .bs {
+  font-size: 2vh;
+}
+.brk.n5 .bm .bn.chico {
+  font-size: 1.55vh;
+}
+.brk.n5 .bm .bmeta {
+  font-size: 1.2vh;
+}
+/* n3: cuartos · semis · final */
+.brk.n3 .bm {
+  padding: 1.2vh 1.5vh;
+}
+.brk.n3 .bm .bl {
   padding: 0.5vh 0;
 }
-.brkbig.o8 .bm .bn {
-  font-size: 3vh;
+.brk.n3 .bm .bn,
+.brk.n3 .bm .bs {
+  font-size: 2.6vh;
 }
-.brkbig.o8 .bm .bn.chico {
-  font-size: 2.3vh;
+.brk.n3 .bm .bn.chico {
+  font-size: 2vh;
 }
-.brkbig.o8 .bm .bs {
-  font-size: 3vh;
+.brk.n3 .bm .bmeta {
+  font-size: 1.5vh;
 }
-.brkbig.o8 .bm .bmeta {
-  font-size: 1.6vh;
+/* n2: semis · final */
+.brk.n2 .bm {
+  padding: 1.5vh 1.8vh;
+}
+.brk.n2 .bm .bl {
+  padding: 0.6vh 0;
+}
+.brk.n2 .bm .bn,
+.brk.n2 .bm .bs {
+  font-size: 3.2vh;
+}
+.brk.n2 .bm .bn.chico {
+  font-size: 2.5vh;
+}
+.brk.n2 .bm .bmeta {
+  font-size: 1.7vh;
+}
+.brk.n2 .champbox .cv {
+  font-size: 3.4vh;
+}
+/* n1: solo la final */
+.brk.n1 .bm {
+  padding: 1.8vh 2.2vh;
+}
+.brk.n1 .bm .bl {
+  padding: 0.7vh 0;
+}
+.brk.n1 .bm .bn,
+.brk.n1 .bm .bs {
+  font-size: 3.6vh;
+}
+.brk.n1 .bm .bn.chico {
+  font-size: 2.8vh;
+}
+.brk.n1 .bm .bmeta {
+  font-size: 1.8vh;
+}
+.brk.n1 .champbox .cv {
+  font-size: 4vh;
 }
 .champbox {
   background: linear-gradient(135deg, rgba(236, 58, 44, 0.18), rgba(255, 63, 139, 0.14));
