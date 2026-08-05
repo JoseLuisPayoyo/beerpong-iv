@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { mesaDeGrupo } from '../../lib/horarios';
 import { derivarGrupo } from './acciones';
 import {
   ConfirmButton,
@@ -338,6 +339,12 @@ export default function Grupos() {
         .filter((p) => p.grupo_id === grupoActivo.id)
         .sort((a, b) => a.orden - b.orden)
     : [];
+  // Mesa del grupo, derivada de su orden dentro del turno (el M usa la 1 y la 2).
+  const mesaActivo = grupoActivo
+    ? grupoActivo.turno === 0
+      ? 'Mesas 1–2'
+      : `Mesa ${mesaDeGrupo(grupoActivo.id, grupos)}`
+    : null;
 
   return (
     <>
@@ -409,7 +416,7 @@ export default function Grupos() {
       {grupoActivo && (
         <div>
           <p className="pc-gtitle">
-            Grupo {grupoActivo.letra} ·{' '}
+            Grupo {grupoActivo.letra} · {mesaActivo} ·{' '}
             <b>
               {partidosActivo.filter((p) => p.estado === 'jugado').length}/
               {partidosActivo.length || 6} partidos

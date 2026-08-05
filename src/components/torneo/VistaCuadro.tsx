@@ -3,6 +3,9 @@ import type { Id } from '../../lib/clasificacion';
 import { horaDeFase } from '../../lib/horarios';
 import type { Fase, Partido, EquipoPub, FaseRow } from './tipos';
 
+// Orden cronológico; en pantalla se pinta INVERTIDO (la ronda más avanzada
+// que ya tenga partidos, arriba): al abrir el Cuadro se ve lo que está
+// pasando ahora, no los 16 cruces de dieciseisavos de hace dos horas.
 const RONDAS: { fase: Fase; label: string }[] = [
   { fase: 'dieciseisavos', label: 'DIECISEISAVOS' },
   { fase: 'octavos', label: 'OCTAVOS' },
@@ -29,7 +32,9 @@ export default function VistaCuadro({
   const rondasConPartidos = RONDAS.map((r) => ({
     ...r,
     matches: partidos.filter((p) => p.fase === r.fase).sort((a, b) => a.orden - b.orden),
-  })).filter((r) => r.matches.length > 0);
+  }))
+    .filter((r) => r.matches.length > 0)
+    .reverse();
 
   const hayCuadro = rondasConPartidos.length > 0;
   const finalP = partidos.find((p) => p.fase === 'final' && p.orden === 0) ?? null;
@@ -71,6 +76,12 @@ export default function VistaCuadro({
         </div>
       )}
 
+      {/* con las rondas invertidas, el campeón corona el cuadro */}
+      <div className="champ" style={{ marginTop: 0, marginBottom: 14 }}>
+        <div className="ct">CAMPEÓN BEERPONG IV</div>
+        <div className="cv">{campeon ?? '¿ ? ? ?'}</div>
+      </div>
+
       {rondasConPartidos.map((r) => {
         const completa = r.matches.every((m) => m.estado === 'jugado');
         // Ventana de la fase (hora real del admin si está fijada); las rondas
@@ -90,11 +101,6 @@ export default function VistaCuadro({
           </div>
         );
       })}
-
-      <div className="champ">
-        <div className="ct">CAMPEÓN BEERPONG IV</div>
-        <div className="cv">{campeon ?? '¿ ? ? ?'}</div>
-      </div>
     </section>
   );
 }
@@ -116,13 +122,24 @@ function MatchCard({ p, nombre }: { p: Partido; nombre: (id: Id | null) => strin
     );
   };
 
+  // Mesa y tanda vienen asignadas en la BD; se enseñan mientras el cruce no
+  // se haya jugado (después ya no le importan a nadie).
+  const meta = [
+    p.mesa != null ? `MESA ${p.mesa}` : null,
+    p.tanda != null ? `TANDA ${p.tanda}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <div className={`bm${enJuego ? ' now' : ''}`}>
-      {enJuego && (
+      {enJuego ? (
         <div className="bnow">
           <span className="dot" />
-          EN JUEGO · MESA {p.mesa ?? '—'}
+          EN JUEGO{meta && ` · ${meta}`}
         </div>
+      ) : (
+        !jugado && meta && <div className="bmeta">{meta}</div>
       )}
       {linea(p.equipo_a, p.vasos_a)}
       {linea(p.equipo_b, p.vasos_b)}

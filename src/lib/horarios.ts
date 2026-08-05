@@ -99,3 +99,39 @@ export function horaDePartidoGrupo(
   const paso = turno === 0 ? Math.floor(orden / 2) : orden;
   return aHora(aMinutos(horaDeTurno(turno, fases)) + paso * MINUTOS_POR_CRUCE_GRUPO);
 }
+
+// Mesas de la fase de grupos (hay 6). Cada grupo juega todos sus cruces en la
+// mesa de su ORDEN dentro del turno (turno 1: A=1…F=6; turno 2: G=1…L=6),
+// derivada de los grupos reales de la BD, nunca escrita a mano. El grupo M
+// (turno 0) usa DOS mesas, la 1 y la 2: sus cruces van de dos en dos por
+// franja (orden par → mesa 1, impar → mesa 2; los pares de cada franja son
+// disjuntos por el round-robin).
+
+/** Mesa del grupo: posición 1-based entre los grupos de su turno (por id). */
+export function mesaDeGrupo(
+  grupoId: number,
+  grupos: { id: number; turno: number }[],
+): number | null {
+  const g = grupos.find((x) => x.id === grupoId);
+  if (!g) return null;
+  const delTurno = grupos
+    .filter((x) => x.turno === g.turno)
+    .sort((a, b) => a.id - b.id);
+  const i = delTurno.findIndex((x) => x.id === grupoId);
+  return i >= 0 ? i + 1 : null;
+}
+
+/** Etiqueta de mesa para la cabecera del grupo: «MESA 3» (el M, «MESAS 1–2»). */
+export function etiquetaMesaGrupo(turno: number, mesa: number | null): string | null {
+  if (turno === 0) return 'MESAS 1–2';
+  return mesa != null ? `MESA ${mesa}` : null;
+}
+
+/** Mesa de un cruce concreto: la de su grupo, salvo en el M (dos simultáneos). */
+export function mesaDePartidoGrupo(
+  turno: number,
+  mesaGrupo: number | null,
+  orden: number,
+): number | null {
+  return turno === 0 ? (orden % 2) + 1 : mesaGrupo;
+}

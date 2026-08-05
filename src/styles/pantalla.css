@@ -502,6 +502,14 @@ body {
   font-style: italic;
   opacity: 0.6;
 }
+/* mesa y tanda de un cruce por jugar */
+.bm .bmeta {
+  font-family: var(--mo);
+  font-size: 1.05vh;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  line-height: 1.2;
+}
 .champbox {
   background: linear-gradient(135deg, rgba(236, 58, 44, 0.18), rgba(255, 63, 139, 0.14));
   border: 1px solid var(--cup);
@@ -636,25 +644,38 @@ body {
   color: var(--cup);
   text-shadow: 0 0 7vh rgba(236, 58, 44, 0.45);
 }
+/* pirámide 4-3-2-1 (rack real, la punta hacia el centro de la pantalla).
+   Todo en vh: escala igual en proyector 16:9 o 4:3 sin desbordar. */
 .cups {
   display: flex;
-  gap: 0.55vw;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4vh;
 }
+.crow {
+  display: flex;
+  justify-content: center;
+  gap: 0.5vh;
+}
+/* vaso SVG: tronco de cono, más ancho arriba que abajo */
 .cup {
-  width: 2.4vh;
-  height: 2.7vh;
-  border-radius: 0.4vh 0.4vh 1vh 1vh;
-  background: var(--cup);
-  border: 0.26vh solid var(--cupD);
+  width: 2.6vh;
+  height: 3.1vh;
+  transition: 0.35s;
+}
+.cup path {
+  fill: var(--cup);
+  stroke: var(--cupD);
+  stroke-width: 1.6;
   transition: 0.35s;
 }
 .cup.out {
-  background: transparent;
-  border-color: rgba(247, 239, 226, 0.16);
   opacity: 0.5;
   transform: scale(0.82);
+}
+.cup.out path {
+  fill: transparent;
+  stroke: rgba(247, 239, 226, 0.16);
 }
 .mid {
   display: flex;

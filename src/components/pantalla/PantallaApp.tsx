@@ -2,7 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { clasificar, compararStandings, type Id, type Standing } from '../../lib/clasificacion';
-import { formatearRestante, horaDeFase, horaDeTurno } from '../../lib/horarios';
+import {
+  etiquetaMesaGrupo,
+  formatearRestante,
+  horaDeFase,
+  horaDeTurno,
+  mesaDeGrupo,
+} from '../../lib/horarios';
 
 // Pantalla de proyector (/pantalla). Se abre, se pone a pantalla completa y no
 // se toca en toda la noche: la vista se deriva del estado del torneo en la BD.
@@ -559,14 +565,17 @@ function Clasificacion({ datos, bloque }: { datos: Datos; bloque: number }) {
         const total =
           partidosGrupo.filter((p) => p.grupo_id === g.id).length ||
           (nEquipos * (nEquipos - 1)) / 2;
+        // Mesa derivada del orden del grupo en su turno (misma regla que /torneo).
+        const mesa = etiquetaMesaGrupo(g.turno, mesaDeGrupo(g.id, grupos));
+        const enMesa = mesa ? `${mesa} · ` : '';
         const sub =
           g.estado === 'completo'
             ? `${total}/${total} · CERRADO`
             : g.estado === 'en_curso'
-              ? `${jugados}/${total} · EN JUEGO`
+              ? `${enMesa}${jugados}/${total} · EN JUEGO`
               : g.turno === 0
-                ? `${horaDeTurno(0, fases)} · POR JUGAR`
-                : `TURNO ${g.turno} · POR JUGAR`;
+                ? `${horaDeTurno(0, fases)} · ${enMesa}POR JUGAR`
+                : `TURNO ${g.turno} · ${enMesa}POR JUGAR`;
         return (
           <div className="gcard" key={g.id}>
             <div className="gh">
@@ -695,8 +704,18 @@ function MatchMini({ p, nombre }: { p: PartidoRow; nombre: (id: Id | null) => st
       </div>
     );
   };
+  // Mesa y tanda (de la BD) mientras el cruce no se haya jugado.
+  const meta = jugado
+    ? ''
+    : [
+        p.mesa != null ? `MESA ${p.mesa}` : null,
+        p.tanda != null ? `TANDA ${p.tanda}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · ');
   return (
     <div className={`bm${p.estado === 'en_juego' ? ' now' : ''}`}>
+      {meta && <div className="bmeta">{meta}</div>}
       {linea(p.equipo_a, p.vasos_a)}
       {linea(p.equipo_b, p.vasos_b)}
     </div>
@@ -737,14 +756,33 @@ function Marcador({ p, nombre }: { p: PartidoRow; nombre: (id: Id | null) => str
   const va = p.vasos_a ?? 0;
   const vb = p.vasos_b ?? 0;
 
-  // El rack de un equipo se vacía según le meten: vasos fuera = puntos del rival.
-  const rack = (fuera: number) => (
-    <div className="cups">
-      {Array.from({ length: 10 }, (_, i) => (
-        <span key={i} className={`cup${i < fuera ? ' out' : ''}`} />
-      ))}
-    </div>
-  );
+  // El rack de un equipo se vacía según le meten: vasos fuera = puntos del
+  // rival. Los 10 vasos van en pirámide de beer pong (4-3-2-1, la punta hacia
+  // el centro) y cada vaso es un tronco de cono, no un punto.
+  const rack = (fuera: number) => {
+    let idx = 0;
+    return (
+      <div className="cups">
+        {[4, 3, 2, 1].map((n, f) => (
+          <div className="crow" key={f}>
+            {Array.from({ length: n }, () => {
+              const i = idx++;
+              return (
+                <svg
+                  key={i}
+                  className={`cup${i < fuera ? ' out' : ''}`}
+                  viewBox="0 0 20 24"
+                  aria-hidden="true"
+                >
+                  <path d="M1.5 1h17l-2.8 22H4.3Z" />
+                </svg>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const lado = (nom: string, vasos: number, rival: number) => (
     <div className={`side${vasos > rival ? ' lead' : ''}`}>

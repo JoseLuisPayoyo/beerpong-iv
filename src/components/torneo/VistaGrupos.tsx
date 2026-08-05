@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 import { clasificar, compararStandings, type Standing, type Id } from '../../lib/clasificacion';
-import { horaDePartidoGrupo, horaDeTurno } from '../../lib/horarios';
+import {
+  etiquetaMesaGrupo,
+  horaDePartidoGrupo,
+  horaDeTurno,
+  mesaDeGrupo,
+  mesaDePartidoGrupo,
+} from '../../lib/horarios';
 import type { Grupo, Partido, EquipoPub, FaseRow } from './tipos';
 
 export default function VistaGrupos({
@@ -90,6 +96,8 @@ export default function VistaGrupos({
   const crucesActivo = activo
     ? partidosGrupo.filter((p) => p.grupo_id === activo.id).sort((a, b) => a.orden - b.orden)
     : [];
+  // Mesa del grupo activo, derivada de su orden dentro del turno (nunca a mano).
+  const mesaActivo = activo ? mesaDeGrupo(activo.id, grupos) : null;
 
   return (
     <section className="view">
@@ -147,6 +155,7 @@ export default function VistaGrupos({
               crucesActivo.length ||
                 (((standings.get(activo.id)?.length ?? 4) * ((standings.get(activo.id)?.length ?? 4) - 1)) / 2),
               horaDeTurno(activo.turno, fases),
+              etiquetaMesaGrupo(activo.turno, mesaActivo),
             )}
           </div>
           <div className="thead">
@@ -220,6 +229,7 @@ export default function VistaGrupos({
                       ? null
                       : horaDePartidoGrupo(activo.turno, p.orden, fases)
                   }
+                  mesa={mesaDePartidoGrupo(activo.turno, mesaActivo, p.orden)}
                   nombre={nombre}
                   jugadores={jugadores}
                 />
@@ -233,16 +243,18 @@ export default function VistaGrupos({
 }
 
 // Fila de un cruce del grupo: jugado (ganador destacado), en juego (ámbar con
-// parcial) o pendiente (—). Mismas tarjetas .bm que el cuadro, con la hora
-// prevista delante mientras el cruce no se haya jugado.
+// parcial) o pendiente (—). Mismas tarjetas .bm que el cuadro, con la hora y
+// la mesa delante mientras el cruce no se haya jugado.
 function PartidoGrupo({
   p,
   hora,
+  mesa,
   nombre,
   jugadores,
 }: {
   p: Partido;
   hora: string | null; // null = jugado: el marcador ya cuenta la historia
+  mesa: number | null;
   nombre: (id: Id | null) => string;
   jugadores: (id: Id | null) => string | null;
 }) {
@@ -268,7 +280,12 @@ function PartidoGrupo({
 
   return (
     <div className={`bm${enJuego ? ' now' : ''}${hora ? ' conh' : ''}`}>
-      {hora && <span className="bhora">{hora}</span>}
+      {hora && (
+        <span className="bhora">
+          {hora}
+          {mesa != null && <i className="bmesa">MESA {mesa}</i>}
+        </span>
+      )}
       <div className="bmc">
         {enJuego && (
           <div className="bnow">
@@ -283,12 +300,19 @@ function PartidoGrupo({
   );
 }
 
-function subtitulo(g: Grupo, jugados: number, total: number, hora: string): string {
+function subtitulo(
+  g: Grupo,
+  jugados: number,
+  total: number,
+  hora: string,
+  mesa: string | null,
+): string {
+  const enMesa = mesa ? ` · ${mesa}` : '';
   if (g.estado === 'completo') return `COMPLETADO · ${total}/${total} PARTIDOS`;
-  if (g.estado === 'en_curso') return `EN JUEGO · ${jugados}/${total} PARTIDOS`;
+  if (g.estado === 'en_curso') return `EN JUEGO · ${jugados}/${total} PARTIDOS${enMesa}`;
   // El grupo M (turno 0) no pertenece a ningún turno: va con su hora, 18:30.
-  if (g.turno === 0) return `GRUPO M · ${hora} · POR JUGAR`;
-  return `TURNO ${g.turno} · ${hora} · POR JUGAR`;
+  if (g.turno === 0) return `GRUPO M · ${hora}${enMesa} · POR JUGAR`;
+  return `TURNO ${g.turno} · ${hora}${enMesa} · POR JUGAR`;
 }
 
 function fmtDif(dif: number): string {

@@ -1005,6 +1005,14 @@ body::before {
   background: var(--am);
   animation: bl 1.1s infinite;
 }
+/* mesa y tanda de un cruce de eliminatoria aún por jugar (vienen de la BD) */
+.bmeta {
+  font-family: var(--mo);
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--mu);
+  margin-bottom: 6px;
+}
 .bl {
   display: flex;
   align-items: center;
@@ -1093,6 +1101,18 @@ body::before {
   font-weight: 700;
   color: var(--mu);
   flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+/* mesa del cruce, bajo la hora prevista */
+.bm .bhora .bmesa {
+  font-style: normal;
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
 }
 .bm .bmc {
   flex: 1;
