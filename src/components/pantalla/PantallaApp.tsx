@@ -666,25 +666,34 @@ function Cuadro({ datos, nombre }: { datos: Datos; nombre: (id: Id | null) => st
   const final = datos.partidos.find((p) => p.fase === 'final' && p.orden === 0) ?? null;
   const campeon = final && final.estado === 'jugado' ? nombre(final.ganador_id) : null;
 
-  // Caso especial: SOLO hay dieciseisavos publicados. Sus 16 cruces no caben
-  // en una columna de 1080p (se cortaban bajo el pie) y salían ilegibles:
-  // van en DOS columnas de 8 con letra grande, y las rondas posteriores,
-  // aún vacías, no se pintan. En cuanto existan octavos se vuelve al cuadro
-  // completo de 5 columnas, que con 8 cruces por columna sí funciona.
-  const dieciseisavos = datos.partidos
-    .filter((p) => p.fase === 'dieciseisavos')
-    .sort((a, b) => a.orden - b.orden);
-  const soloDieciseisavos =
-    dieciseisavos.length > 0 &&
-    datos.partidos.every((p) => p.fase === 'grupo' || p.fase === 'dieciseisavos');
-  if (soloDieciseisavos) {
+  // Caso especial: dieciseisavos (16 cruces) u octavos (8) como ronda más
+  // avanzada. En una sola columna no caben en 1080p (se cortaban bajo el
+  // pie) y salían ilegibles: la ronda en curso se pinta SOLA, a todo el
+  // ancho, en dos columnas (16 → 2×8, 8 → 2×4) y con letra grande; las
+  // rondas posteriores, aún vacías, no se pintan. De cuartos en adelante
+  // (4, 2 y 1 cruces) el cuadro completo de 5 columnas cabe y sigue igual.
+  const hayTardias = datos.partidos.some(
+    (p) => p.fase === 'cuartos' || p.fase === 'semifinal' || p.fase === 'final',
+  );
+  const rondaGrande = hayTardias
+    ? null
+    : datos.partidos.some((p) => p.fase === 'octavos')
+      ? ('octavos' as const)
+      : datos.partidos.some((p) => p.fase === 'dieciseisavos')
+        ? ('dieciseisavos' as const)
+        : null;
+  if (rondaGrande) {
+    const cruces = datos.partidos
+      .filter((p) => p.fase === rondaGrande)
+      .sort((a, b) => a.orden - b.orden);
+    const mitad = Math.ceil(cruces.length / 2);
     return (
-      <div className="brk16">
-        <div className="bh16">Dieciseisavos</div>
+      <div className={`brkbig${rondaGrande === 'octavos' ? ' o8' : ''}`}>
+        <div className="bhbig">{rondaGrande === 'octavos' ? 'Octavos' : 'Dieciseisavos'}</div>
         <div className="cols">
-          {[dieciseisavos.slice(0, 8), dieciseisavos.slice(8)].map((mitad, i) => (
-            <div className="bcol16" key={i}>
-              {mitad.map((m) => (
+          {[cruces.slice(0, mitad), cruces.slice(mitad)].map((col, i) => (
+            <div className="bcolbig" key={i}>
+              {col.map((m) => (
                 <MatchMini key={String(m.id)} p={m} nombre={nombre} />
               ))}
             </div>
@@ -726,7 +735,7 @@ function MatchMini({ p, nombre }: { p: PartidoRow; nombre: (id: Id | null) => st
   const linea = (equipoId: Id | null, vasos: number | null) => {
     const nom = nombre(equipoId);
     const gana = jugado && p.ganador_id != null && equipoId === p.ganador_id;
-    // `chico` solo tiene efecto en la vista grande de dieciseisavos (.brk16):
+    // `chico` solo tiene efecto en la vista grande de 16avos/octavos (.brkbig):
     // los nombres largos bajan de cuerpo en vez de recortarse con «…».
     const chico = (nom ?? '').length > 16;
     return (
