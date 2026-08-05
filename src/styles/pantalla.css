@@ -510,6 +510,68 @@ body {
   color: var(--muted);
   line-height: 1.2;
 }
+/* dieciseisavos solos: sus 16 cruces no caben en una columna de 1080p. Dos
+   columnas de 8 con letra grande (esto se lee a 20 metros); las rondas
+   posteriores, vacías, no se pintan. Presupuesto vertical: 8 tarjetas de
+   ≤9vh + cabecera caben en el core (~80vh) sin scroll ni pisar el pie. */
+.brk16 {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.brk16 .bh16 {
+  flex: none;
+  font-family: var(--mo);
+  font-size: 1.7vh;
+  letter-spacing: 0.3em;
+  color: var(--amber);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 1.2vh;
+}
+.brk16 .cols {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2vw;
+}
+.brk16 .bcol16 {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.7vh;
+  min-width: 0;
+  min-height: 0;
+}
+.brk16 .bm {
+  padding: 0.8vh 1.4vh;
+}
+.brk16 .bm .bl {
+  padding: 0.25vh 0;
+}
+.brk16 .bm .bn {
+  font-size: 2vh;
+  line-height: 1.15;
+  color: var(--cream);
+}
+/* nombres largos: bajan de cuerpo antes que recortarse con puntos suspensivos */
+.brk16 .bm .bn.chico {
+  font-size: 1.55vh;
+}
+.brk16 .bm .bs {
+  font-size: 2vh;
+}
+.brk16 .bm .bmeta {
+  font-size: 1.25vh;
+}
+/* el cruce en juego tiene que cantar desde el fondo del pabellón */
+.brk16 .bm.now {
+  border-color: var(--amber);
+  background: rgba(246, 167, 44, 0.1);
+  box-shadow: 0 0 0 0.35vh rgba(246, 167, 44, 0.4);
+}
 .champbox {
   background: linear-gradient(135deg, rgba(236, 58, 44, 0.18), rgba(255, 63, 139, 0.14));
   border: 1px solid var(--cup);

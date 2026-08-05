@@ -665,6 +665,35 @@ function CuentaAtras({
 function Cuadro({ datos, nombre }: { datos: Datos; nombre: (id: Id | null) => string | null }) {
   const final = datos.partidos.find((p) => p.fase === 'final' && p.orden === 0) ?? null;
   const campeon = final && final.estado === 'jugado' ? nombre(final.ganador_id) : null;
+
+  // Caso especial: SOLO hay dieciseisavos publicados. Sus 16 cruces no caben
+  // en una columna de 1080p (se cortaban bajo el pie) y salían ilegibles:
+  // van en DOS columnas de 8 con letra grande, y las rondas posteriores,
+  // aún vacías, no se pintan. En cuanto existan octavos se vuelve al cuadro
+  // completo de 5 columnas, que con 8 cruces por columna sí funciona.
+  const dieciseisavos = datos.partidos
+    .filter((p) => p.fase === 'dieciseisavos')
+    .sort((a, b) => a.orden - b.orden);
+  const soloDieciseisavos =
+    dieciseisavos.length > 0 &&
+    datos.partidos.every((p) => p.fase === 'grupo' || p.fase === 'dieciseisavos');
+  if (soloDieciseisavos) {
+    return (
+      <div className="brk16">
+        <div className="bh16">Dieciseisavos</div>
+        <div className="cols">
+          {[dieciseisavos.slice(0, 8), dieciseisavos.slice(8)].map((mitad, i) => (
+            <div className="bcol16" key={i}>
+              {mitad.map((m) => (
+                <MatchMini key={String(m.id)} p={m} nombre={nombre} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="brk">
       {RONDAS.map((r) => {
@@ -697,9 +726,12 @@ function MatchMini({ p, nombre }: { p: PartidoRow; nombre: (id: Id | null) => st
   const linea = (equipoId: Id | null, vasos: number | null) => {
     const nom = nombre(equipoId);
     const gana = jugado && p.ganador_id != null && equipoId === p.ganador_id;
+    // `chico` solo tiene efecto en la vista grande de dieciseisavos (.brk16):
+    // los nombres largos bajan de cuerpo en vez de recortarse con «…».
+    const chico = (nom ?? '').length > 16;
     return (
       <div className={`bl${gana ? ' w' : ''}${nom == null ? ' pend' : ''}`}>
-        <span className="bn">{nom ?? 'Por determinar'}</span>
+        <span className={`bn${chico ? ' chico' : ''}`}>{nom ?? 'Por determinar'}</span>
         <span className="bs">{jugado || p.estado === 'en_juego' ? (vasos ?? 0) : '—'}</span>
       </div>
     );
