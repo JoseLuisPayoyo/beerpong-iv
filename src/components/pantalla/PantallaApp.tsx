@@ -450,6 +450,9 @@ const inicio = Date.now();
 // degrada (una sola vez) si la columna no existe en este entorno.
 let conParticipantes = true;
 
+// Capacidad del vaso reglamentario, por si algún año cambia el vaso.
+const ML_POR_VASO = 150;
+
 /* ================== vistas ================== */
 
 function Bienvenida({ datos }: { datos: Datos | null }) {
@@ -844,6 +847,7 @@ function Campeon({
   const vasosNoche = datos.partidos
     .filter((p) => p.estado === 'jugado')
     .reduce((t, p) => t + (p.vasos_a ?? 0) + (p.vasos_b ?? 0), 0);
+  const litrosNoche = Math.round((vasosNoche * ML_POR_VASO) / 1000);
 
   const quien = [equipo?.participante_1, equipo?.participante_2].filter(Boolean).join(' · ');
 
@@ -876,7 +880,7 @@ function Campeon({
         </div>
       </div>
       <div className="tot">
-        ESTA NOCHE SE HAN BEBIDO <b>{vasosNoche}</b> VASOS
+        ESTA NOCHE SE HAN BEBIDO <b>{vasosNoche}</b> VASOS · <b>{litrosNoche}</b> LITROS
       </div>
     </div>
   );
