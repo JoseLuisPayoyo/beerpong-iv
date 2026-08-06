@@ -459,11 +459,11 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
   }
 
   async function guardarResultado(p: Partido, a: number, b: number) {
-    if (a === b) {
-      setEditErr('No puede haber empate: tiene que haber un ganador.');
+    if (a === b && p.fase !== 'grupo') {
+      setEditErr('En eliminatoria no puede haber empate: alguien tiene que pasar de ronda.');
       return;
     }
-    const ganador_id = a > b ? p.equipo_a : p.equipo_b;
+    const ganador_id = a > b ? p.equipo_a : a < b ? p.equipo_b : null;
     setErrOp(null);
     setGuardando(true);
     const { error } = vigilar(
@@ -1088,7 +1088,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
               </div>
             );
           })}
-          <p className="pc-hint">Gana quien llegue a 10. Sin empates.</p>
+          <p className="pc-hint">Gana quien más vasos tenga. En grupos puede haber empate.</p>
           {editErr && <p className="pc-editerr">{editErr}</p>}
           <button
             className="pc-save"

@@ -3,9 +3,9 @@
 //
 // Por equipo, a partir de sus partidos de grupo `jugado`:
 //   PJ  partidos jugados
-//   G   victorias (no hay empates: el que llega a 10 gana)
+//   G   victorias · E  empates (los partidos van a tiempo y pueden empatarse)
 //   VF  vasos a favor · VC vasos en contra · DIF = VF − VC
-//   PTS = 3 × G
+//   PTS = 3 × G + 1 × E
 // Orden: PTS desc → DIF desc → VF desc.
 
 export type Id = string | number;
@@ -22,6 +22,7 @@ export interface Standing {
   equipoId: Id;
   pj: number;
   g: number;
+  e: number;
   vf: number;
   vc: number;
   dif: number;
@@ -37,7 +38,7 @@ export function compararStandings(x: Standing, y: Standing): number {
 export function clasificar(equipoIds: Id[], partidos: PartidoClasif[]): Standing[] {
   const tabla = new Map<Id, Standing>();
   for (const id of equipoIds) {
-    tabla.set(id, { equipoId: id, pj: 0, g: 0, vf: 0, vc: 0, dif: 0, pts: 0 });
+    tabla.set(id, { equipoId: id, pj: 0, g: 0, e: 0, vf: 0, vc: 0, dif: 0, pts: 0 });
   }
   for (const p of partidos) {
     if (p.estado !== 'jugado' || p.vasos_a == null || p.vasos_b == null) continue;
@@ -52,12 +53,16 @@ export function clasificar(equipoIds: Id[], partidos: PartidoClasif[]): Standing
     b.vf += p.vasos_b;
     b.vc += p.vasos_a;
     if (p.vasos_a > p.vasos_b) a.g++;
-    else b.g++;
+    else if (p.vasos_a < p.vasos_b) b.g++;
+    else {
+      a.e++;
+      b.e++;
+    }
   }
   const filas = [...tabla.values()];
   for (const f of filas) {
     f.dif = f.vf - f.vc;
-    f.pts = 3 * f.g;
+    f.pts = 3 * f.g + f.e;
   }
   filas.sort(compararStandings);
   return filas;

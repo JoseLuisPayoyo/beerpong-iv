@@ -121,16 +121,22 @@ export function ErrorPersistente({
 export function textoCorreccion(opts: {
   antes: [number, number];
   ahora: [number, number];
-  ganadorAntes: string;
-  ganadorAhora: string;
+  ganadorAntes: string | null;
+  ganadorAhora: string | null;
   avisoRonda?: string | null;
 }): string {
   const [va, vb] = opts.antes;
   const [a, b] = opts.ahora;
   const ganador =
     opts.ganadorAntes === opts.ganadorAhora
-      ? `El ganador sigue siendo ${opts.ganadorAhora}.`
-      : `El ganador pasa de ${opts.ganadorAntes} a ${opts.ganadorAhora}.`;
+      ? opts.ganadorAhora == null
+        ? 'El partido sigue en empate.'
+        : `El ganador sigue siendo ${opts.ganadorAhora}.`
+      : opts.ganadorAhora == null
+        ? `${opts.ganadorAntes} deja de ser el ganador: el partido queda en empate.`
+        : opts.ganadorAntes == null
+          ? `El partido deja de estar en empate: gana ${opts.ganadorAhora}.`
+          : `El ganador pasa de ${opts.ganadorAntes} a ${opts.ganadorAhora}.`;
   return [`Vas a cambiar ${va}–${vb} por ${a}–${b}.`, ganador, opts.avisoRonda ?? '']
     .filter(Boolean)
     .join(' ');
@@ -199,9 +205,7 @@ export function TarjetaCorreccion({
       </div>
       {fila(nombreA, 'a')}
       {fila(nombreB, 'b')}
-      <p className="pc-hint">
-        Gana quien llegue a 10, sin empates. No se cambia nada hasta que confirmes.
-      </p>
+      <p className="pc-hint">No se cambia nada hasta que confirmes.</p>
       <ConfirmButton
         className="pc-save"
         question={pregunta}

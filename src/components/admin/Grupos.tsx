@@ -233,11 +233,7 @@ export default function Grupos() {
 
   async function guardar(p: Partido) {
     const { a, b } = score;
-    if (a === b) {
-      setEditErr('No puede haber empate: tiene que haber un ganador.');
-      return;
-    }
-    const ganador_id = a > b ? p.equipo_a : p.equipo_b;
+    const ganador_id = a > b ? p.equipo_a : a < b ? p.equipo_b : null;
 
     setErrOp(null);
     setGuardando(p.id);
@@ -282,7 +278,7 @@ export default function Grupos() {
   // Corrección de un partido ya jugado: sobrescribe el marcador y recalcula
   // SIEMPRE el estado y el 1º del grupo (pueden cambiar con la corrección).
   async function corregir(p: Partido, a: number, b: number) {
-    const ganador_id = a > b ? p.equipo_a : p.equipo_b;
+    const ganador_id = a > b ? p.equipo_a : a < b ? p.equipo_b : null;
     setErrOp(null);
     setGuardando(p.id);
     const { error } = vigilar(
@@ -431,8 +427,8 @@ export default function Grupos() {
 
             // Corrección de un partido ya jugado
             if (editando === p.id && p.estado === 'jugado') {
-              const nuevoGanador = score.a > score.b ? p.equipo_a : p.equipo_b;
-              const valido = score.a !== score.b;
+              const nuevoGanador =
+                score.a > score.b ? p.equipo_a : score.a < score.b ? p.equipo_b : null;
               const cambia = score.a !== p.vasos_a || score.b !== p.vasos_b;
               return (
                 <TarjetaCorreccion
@@ -444,13 +440,13 @@ export default function Grupos() {
                   pregunta={textoCorreccion({
                     antes: [p.vasos_a ?? 0, p.vasos_b ?? 0],
                     ahora: [score.a, score.b],
-                    ganadorAntes: nombre(p.ganador_id),
-                    ganadorAhora: nombre(nuevoGanador),
+                    ganadorAntes: p.ganador_id != null ? nombre(p.ganador_id) : null,
+                    ganadorAhora: nuevoGanador != null ? nombre(nuevoGanador) : null,
                     avisoRonda: hayEliminatoria
                       ? 'OJO: los dieciseisavos ya están generados. Si cambias este resultado tendrás que regenerarlos en la pestaña Eliminatoria.'
                       : null,
                   })}
-                  puedeGuardar={valido && cambia}
+                  puedeGuardar={cambia}
                   guardando={guardando === p.id}
                   onPaso={paso}
                   onConfirmar={() => void corregir(p, score.a, score.b)}
@@ -470,7 +466,7 @@ export default function Grupos() {
                   <span className="rs">
                     {p.vasos_a}–{p.vasos_b}
                   </span>
-                  <span className="win">{nombre(p.ganador_id)}</span>
+                  <span className="win">{p.ganador_id != null ? nombre(p.ganador_id) : 'Empate'}</span>
                   <button
                     className="pc-corr"
                     disabled={guardando !== null}
@@ -534,7 +530,7 @@ export default function Grupos() {
                       </button>
                     </div>
                   </div>
-                  <p className="pc-hint">Gana quien llegue a 10. Sin empates.</p>
+                  <p className="pc-hint">Gana quien más vasos tenga al acabar el tiempo. Puede haber empate.</p>
                   {editErr && <p className="pc-editerr">{editErr}</p>}
                   <button
                     className="pc-save"
