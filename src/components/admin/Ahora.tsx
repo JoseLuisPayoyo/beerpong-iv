@@ -460,11 +460,7 @@ export default function Ahora({ onIr }: { onIr: (tab: TabDestino) => void }) {
 
   async function guardarResultado(p: Partido, a: number, b: number) {
     if (a === b) {
-      setEditErr('No puede haber empate: gana quien llegue a 10.');
-      return;
-    }
-    if (Math.max(a, b) !== 10) {
-      setEditErr('El ganador tiene que llegar exactamente a 10.');
+      setEditErr('No puede haber empate: tiene que haber un ganador.');
       return;
     }
     const ganador_id = a > b ? p.equipo_a : p.equipo_b;

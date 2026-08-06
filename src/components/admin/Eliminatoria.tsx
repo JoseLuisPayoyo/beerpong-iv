@@ -332,11 +332,7 @@ export default function Eliminatoria() {
   async function guardar(p: Partido) {
     const { a, b } = scores[String(p.id)] ?? { a: 0, b: 0 };
     if (a === b) {
-      setErrs((e) => ({ ...e, [String(p.id)]: 'No puede haber empate: gana quien llegue a 10.' }));
-      return;
-    }
-    if (Math.max(a, b) !== 10) {
-      setErrs((e) => ({ ...e, [String(p.id)]: 'El ganador tiene que llegar exactamente a 10.' }));
+      setErrs((e) => ({ ...e, [String(p.id)]: 'No puede haber empate: tiene que haber un ganador.' }));
       return;
     }
     const ganador_id = a > b ? p.equipo_a : p.equipo_b;
@@ -545,7 +541,7 @@ export default function Eliminatoria() {
                       if (corrigiendo === p.id && p.estado === 'jugado') {
                         const score = scores[String(p.id)] ?? { a: 0, b: 0 };
                         const nuevoGanador = score.a > score.b ? p.equipo_a : p.equipo_b;
-                        const valido = score.a !== score.b && Math.max(score.a, score.b) === 10;
+                        const valido = score.a !== score.b;
                         const cambia = score.a !== p.vasos_a || score.b !== p.vasos_b;
                         const rondaSiguiente = SIGUIENTE[p.fase];
                         return (

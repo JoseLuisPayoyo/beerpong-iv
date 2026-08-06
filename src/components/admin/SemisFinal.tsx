@@ -181,7 +181,7 @@ export default function SemisFinal() {
   async function sellar(p: Partido) {
     const a = p.vasos_a ?? 0;
     const b = p.vasos_b ?? 0;
-    if (Math.max(a, b) < 10 || a === b) return; // el botón ya está deshabilitado, doble seguro
+    if (a === b) return; // el botón ya está deshabilitado, doble seguro
     const ganador_id = a > b ? p.equipo_a : p.equipo_b;
     setErrOp(null);
     setOcupado(p.id);
@@ -311,7 +311,7 @@ export default function SemisFinal() {
   const renderSlot = (etiqueta: string, partido: Partido | null, notaBloqueo: string) => {
     if (partido && corrigiendo === partido.id && partido.estado === 'jugado') {
       const nuevoGanador = scoreCorr.a > scoreCorr.b ? partido.equipo_a : partido.equipo_b;
-      const valido = scoreCorr.a !== scoreCorr.b && Math.max(scoreCorr.a, scoreCorr.b) === 10;
+      const valido = scoreCorr.a !== scoreCorr.b;
       const cambia = scoreCorr.a !== partido.vasos_a || scoreCorr.b !== partido.vasos_b;
       return (
         <TarjetaCorreccion
@@ -515,7 +515,7 @@ function Slot({
   }
 
   if (partido.estado === 'en_juego') {
-    const puedeSellar = Math.max(va, vb) >= 10 && va !== vb;
+    const puedeSellar = va !== vb;
     return (
       <div className="pc-live-card">
         <div className="pc-live-badge">

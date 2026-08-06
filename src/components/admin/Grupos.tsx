@@ -234,11 +234,7 @@ export default function Grupos() {
   async function guardar(p: Partido) {
     const { a, b } = score;
     if (a === b) {
-      setEditErr('No puede haber empate: el partido lo gana quien llegue a 10.');
-      return;
-    }
-    if (Math.max(a, b) !== 10) {
-      setEditErr('El ganador tiene que llegar exactamente a 10 vasos.');
+      setEditErr('No puede haber empate: tiene que haber un ganador.');
       return;
     }
     const ganador_id = a > b ? p.equipo_a : p.equipo_b;
@@ -436,7 +432,7 @@ export default function Grupos() {
             // Corrección de un partido ya jugado
             if (editando === p.id && p.estado === 'jugado') {
               const nuevoGanador = score.a > score.b ? p.equipo_a : p.equipo_b;
-              const valido = score.a !== score.b && Math.max(score.a, score.b) === 10;
+              const valido = score.a !== score.b;
               const cambia = score.a !== p.vasos_a || score.b !== p.vasos_b;
               return (
                 <TarjetaCorreccion
